@@ -78,7 +78,7 @@ const CallList = ({ type }: { type: "ended" | "upcoming" | "recordings" }) => {
       }
 
       const response = await fetch(
-        `/api/stream/recordings/${encodeURIComponent(recordingId)}`,
+        `${import.meta.env.VITE_BE_URL || ""}/api/stream/recordings/${encodeURIComponent(recordingId)}`,
         {
           method: "DELETE",
           headers: {

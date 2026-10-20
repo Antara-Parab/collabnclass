@@ -10,14 +10,24 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 4000;
 
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "http://localhost:3001",
+  "https://collabnclass.vercel.app",
+  "https://collabclass.vercel.app",
+].filter(Boolean) as string[];
+
 app.use(
   cors({
-    origin: [
-      !process.env.FRONTEND_URL,
-      "http://localhost:3000",
-      "http://localhost:3001",
-      "https://collabclass.vercel.app",
-    ],
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(null, false);
+      }
+    },
     credentials: true,
   })
 );

@@ -22,7 +22,7 @@ const MobileNav = () => {
         <SheetContent side="left" className="border-r border-light-4 dark:border-dark-4 bg-light-1 dark:bg-dark-1 transition-colors">
           <Link to="/" className="flex items-center gap-1">
             <img
-              src="/icons/logo.svg"
+              src="/icons/logo.png"
               width={32}
               height={32}
               alt="collabclass logo"

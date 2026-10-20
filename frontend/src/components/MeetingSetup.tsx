@@ -8,13 +8,14 @@ import {
 
 import Alert from './Alert';
 import { Button } from './ui/button';
+import { useToast } from './ui/use-toast';
+import { Loader2 } from 'lucide-react';
 
 const MeetingSetup = ({
   setIsSetupComplete,
 }: {
   setIsSetupComplete: (value: boolean) => void;
 }) => {
-  // https://getstream.io/video/docs/react/guides/call-and-participant-state/#call-state
   const { useCallEndedAt, useCallStartsAt } = useCallStateHooks();
   const callStartsAt = useCallStartsAt();
   const callEndedAt = useCallEndedAt();
@@ -23,6 +24,8 @@ const MeetingSetup = ({
   const callHasEnded = !!callEndedAt;
 
   const call = useCall();
+  const { toast } = useToast();
+  const [isJoining, setIsJoining] = useState(false);
 
   if (!call) {
     throw new Error(
@@ -30,7 +33,6 @@ const MeetingSetup = ({
     );
   }
 
-  // https://getstream.io/video/docs/react/ui-cookbook/replacing-call-controls/
   const [isMicCamToggled, setIsMicCamToggled] = useState(false);
 
   useEffect(() => {
@@ -42,6 +44,26 @@ const MeetingSetup = ({
       call.microphone.enable();
     }
   }, [isMicCamToggled, call.camera, call.microphone]);
+
+  const handleJoin = async () => {
+    try {
+      setIsJoining(true);
+      await call.join();
+      setIsSetupComplete(true);
+    } catch (error) {
+      console.error('Failed to join call:', error);
+      toast({
+        title: 'Failed to join meeting',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Unable to connect to the call. Please check your camera/mic permissions and internet connection.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsJoining(false);
+    }
+  };
 
   if (callTimeNotArrived)
     return (
@@ -75,18 +97,21 @@ const MeetingSetup = ({
         <DeviceSettings />
       </div>
       <Button
-        className="rounded-md bg-royal-1 hover:bg-royal-2 text-white px-4 py-2.5"
-        onClick={() => {
-          call.join();
-
-          setIsSetupComplete(true);
-        }}
+        className="rounded-md bg-royal-1 hover:bg-royal-2 text-white px-4 py-2.5 min-w-[140px]"
+        onClick={handleJoin}
+        disabled={isJoining}
       >
-        Join meeting
+        {isJoining ? (
+          <div className="flex items-center gap-2">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            <span>Connecting...</span>
+          </div>
+        ) : (
+          'Join meeting'
+        )}
       </Button>
     </div>
   );
 };
 
 export default MeetingSetup;
-

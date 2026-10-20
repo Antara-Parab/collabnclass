@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useUser } from '@clerk/clerk-react';
 import { StreamCall, StreamTheme } from '@stream-io/video-react-sdk';
 import { useParams } from 'react-router-dom';
-import { Loader } from 'lucide-react';
+import Loader from '@/components/Loader';
 
 import { useGetCallById } from '@/hooks/useGetCallById';
 import { ChatProvider } from '@/contexts/ChatContext';

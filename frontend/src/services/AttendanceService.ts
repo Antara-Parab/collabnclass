@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabaseClient';
+import { supabase, isSupabaseConfigured } from '@/lib/supabaseClient';
 
 export interface AttendanceRecord {
   id?: string;
@@ -6,26 +6,32 @@ export interface AttendanceRecord {
   user_id: string;
   user_name: string;
   joined_at: string;
-  left_at?: string;
+  left_at?: string | null;
 }
 
 class AttendanceService {
   // Record when a user joins a meeting
   static async recordJoin(meetingId: string, userId: string, userName: string) {
     try {
-      console.log('Recording join:', { meetingId, userId, userName });
-      
+      if (!isSupabaseConfigured) {
+        console.warn('Supabase is not fully configured, skipping attendance tracking.');
+        return null;
+      }
+
       // Check if user already has an active session for this meeting
-      const { data: existingRecord } = await supabase
+      const { data: existingRecord, error: checkError } = await supabase
         .from('meeting_attendance')
         .select('*')
         .eq('meeting_id', meetingId)
         .eq('user_id', userId)
-        .is('left_at', 'null')
-        .single();
+        .is('left_at', null)
+        .maybeSingle();
+
+      if (checkError) {
+        console.warn('Error checking existing attendance session:', checkError);
+      }
 
       if (existingRecord) {
-        console.log('User already has active session, skipping join record');
         return existingRecord;
       }
 
@@ -39,26 +45,25 @@ class AttendanceService {
           left_at: null,
         })
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error recording join:', error);
-        throw error;
+        return null;
       }
 
-      console.log('Join recorded successfully:', data);
       return data;
     } catch (error) {
       console.error('Failed to record join:', error);
-      throw error;
+      return null;
     }
   }
 
   // Record when a user leaves a meeting
   static async recordLeave(meetingId: string, userId: string) {
     try {
-      console.log('Recording leave:', { meetingId, userId });
-      
+      if (!isSupabaseConfigured) return null;
+
       const { data, error } = await supabase
         .from('meeting_attendance')
         .update({
@@ -66,26 +71,27 @@ class AttendanceService {
         })
         .eq('meeting_id', meetingId)
         .eq('user_id', userId)
-        .is('left_at', 'null')
+        .is('left_at', null)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error recording leave:', error);
-        throw error;
+        return null;
       }
 
-      console.log('Leave recorded successfully:', data);
       return data;
     } catch (error) {
       console.error('Failed to record leave:', error);
-      throw error;
+      return null;
     }
   }
 
   // Get attendance records for a specific meeting
   static async getMeetingAttendance(meetingId: string) {
     try {
+      if (!isSupabaseConfigured) return [];
+
       const { data, error } = await supabase
         .from('meeting_attendance')
         .select('*')
@@ -94,19 +100,21 @@ class AttendanceService {
 
       if (error) {
         console.error('Error fetching attendance:', error);
-        throw error;
+        return [];
       }
 
       return data || [];
     } catch (error) {
       console.error('Failed to fetch attendance:', error);
-      throw error;
+      return [];
     }
   }
 
   // Get all attendance records for a user
   static async getUserAttendance(userId: string) {
     try {
+      if (!isSupabaseConfigured) return [];
+
       const { data, error } = await supabase
         .from('meeting_attendance')
         .select('*')
@@ -115,13 +123,13 @@ class AttendanceService {
 
       if (error) {
         console.error('Error fetching user attendance:', error);
-        throw error;
+        return [];
       }
 
       return data || [];
     } catch (error) {
       console.error('Failed to fetch user attendance:', error);
-      throw error;
+      return [];
     }
   }
 }

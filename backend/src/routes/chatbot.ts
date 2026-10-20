@@ -4,34 +4,50 @@ import express from "express";
 import Groq from "groq-sdk";
 
 dotenv.config();
-if (!process.env.GROQ_API_KEY) {
-  throw new Error("GROQ_API_KEY is missing in environment variables");
-}
-
-const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY,
-});
 
 const router = express.Router();
+
+let groqClient: Groq | null = null;
+const getGroqClient = (): Groq | null => {
+  if (groqClient) return groqClient;
+  if (!process.env.GROQ_API_KEY) return null;
+  groqClient = new Groq({
+    apiKey: process.env.GROQ_API_KEY,
+  });
+  return groqClient;
+};
 
 // Chat endpoint
 router.post("/chatbot", async (req: Request, res: Response) => {
   try {
     const { message, conversationHistory = [] } = req.body;
 
+    if (!message || typeof message !== "string" || !message.trim()) {
+      return res
+        .status(400)
+        .json({ error: "A valid 'message' string is required." });
+    }
+
+    const groq = getGroqClient();
+    if (!groq) {
+      return res.status(503).json({
+        error: "AI Chatbot is currently unavailable. Set GROQ_API_KEY in backend .env to enable.",
+      });
+    }
+
     // Build conversation context for Groq
-    let contextMessages = [];
+    let contextMessages: { role: "system" | "user" | "assistant"; content: string }[] = [];
 
     // Add conversation history (last 5 messages)
-    if (conversationHistory && conversationHistory.length > 0) {
+    if (Array.isArray(conversationHistory) && conversationHistory.length > 0) {
       contextMessages = conversationHistory.slice(-5).map((msg: any) => ({
-        role: msg.role,
-        content: msg.content,
+        role: msg.role === "assistant" ? "assistant" : "user",
+        content: String(msg.content || ""),
       }));
     }
     contextMessages.push({
       role: "user",
-      content: message,
+      content: message.trim(),
     });
 
     const systemPrompt = `You are a helpful AI assistant for video meetings. You help users with:
@@ -43,9 +59,9 @@ router.post("/chatbot", async (req: Request, res: Response) => {
 
     Be concise, friendly, and helpful. Keep responses under 150 words when possible.`;
 
-    // Call Groq API
+    // Call Groq API with valid versatile model
     const completion = await groq.chat.completions.create({
-      model: "openai/gpt-oss-120b",
+      model: "llama-3.3-70b-versatile",
       messages: [
         {
           role: "system",

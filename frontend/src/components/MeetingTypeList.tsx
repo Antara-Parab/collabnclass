@@ -45,34 +45,74 @@ const MeetingTypeList = () => {
     setMeetingState(undefined);
   };
 
-  const joinMeetingByCode = async (code: string) => {
+  const joinMeetingByCodeOrLink = async (rawInput: string) => {
     if (!client) return;
     try {
-      const normalizedCode = code.replace(/[^A-Z0-9]/gi, "").toUpperCase();
-      if (normalizedCode.length !== 8) {
-        toast({ title: "Invalid meeting code", description: "Meeting code must be 8 characters" });
+      const trimmed = rawInput.trim();
+      if (!trimmed) {
+        toast({ title: "Please enter a meeting code or link" });
         return;
       }
+
+      // 1. Check if user pasted a full meeting link (e.g. .../meeting/:id)
+      const urlMatch = trimmed.match(/\/meeting\/([a-zA-Z0-9_\-]+)/);
+      if (urlMatch && urlMatch[1]) {
+        navigate(`/meeting/${urlMatch[1]}`);
+        toast({ title: "Joining meeting..." });
+        return;
+      }
+
+      // 2. Check if user pasted a standard UUID
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (uuidRegex.test(trimmed)) {
+        navigate(`/meeting/${trimmed}`);
+        toast({ title: "Joining meeting..." });
+        return;
+      }
+
+      // 3. Otherwise treat as 8-character meeting code
+      const normalizedCode = trimmed.replace(/[^A-Z0-9]/gi, "").toUpperCase();
+      if (normalizedCode.length !== 8) {
+        toast({
+          title: "Invalid meeting code or link",
+          description: "Meeting code must be 8 characters, or paste a valid meeting URL.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const { calls } = await client.queryCalls({
         filter_conditions: { "custom.meetingCode": normalizedCode },
         limit: 1,
       });
+
       if (calls.length === 0) {
-        toast({ title: "Meeting not found", description: "No meeting found with this code" });
+        toast({
+          title: "Meeting not found",
+          description: "No active meeting found with this code",
+          variant: "destructive",
+        });
         return;
       }
+
       const call = calls[0];
       if (call.state.endedAt) {
-        toast({ title: "Meeting has ended", description: "This meeting has already ended" });
+        toast({
+          title: "Meeting has ended",
+          description: "This meeting has already ended",
+          variant: "destructive",
+        });
         return;
       }
+
       navigate(`/meeting/${call.id}`);
       toast({ title: "Joining meeting..." });
     } catch (error) {
-      console.error("Error joining meeting by code:", error);
+      console.error("Error joining meeting by code/link:", error);
       toast({
         title: "Failed to join meeting",
         description: error instanceof Error ? error.message : "An error occurred",
+        variant: "destructive",
       });
     }
   };
@@ -114,6 +154,7 @@ const MeetingTypeList = () => {
       toast({
         title: "Failed to create Meeting",
         description: error instanceof Error ? error.message : "Failed to create meeting",
+        variant: "destructive",
       });
     }
   };
@@ -285,12 +326,12 @@ const MeetingTypeList = () => {
         className="text-center"
         buttonText="Join Meeting"
         handleClick={async () => {
-          const code = values.meetingCode.trim().toUpperCase();
+          const code = values.meetingCode.trim();
           const link = values.link.trim();
           if (code) {
-            await joinMeetingByCode(code);
+            await joinMeetingByCodeOrLink(code);
           } else if (link) {
-            navigate(link);
+            await joinMeetingByCodeOrLink(link);
           } else {
             toast({ title: "Please enter a meeting code or link" });
           }
@@ -318,9 +359,9 @@ const MeetingTypeList = () => {
             <div className="flex-1 border-t border-[rgba(0,150,255,0.15)]"></div>
           </div>
           <div className="flex flex-col gap-3">
-            <label className={oceanLabel}>Enter Meeting Link</label>
+            <label className={oceanLabel}>Enter Meeting Link or Call ID</label>
             <Input
-              placeholder="Meeting link"
+              placeholder="https://.../meeting/uuid or UUID"
               value={values.link}
               onChange={(e) => setValues({ ...values, link: e.target.value })}
               className={oceanInput}
