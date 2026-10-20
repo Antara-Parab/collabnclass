@@ -9,31 +9,45 @@ import 'react-datepicker/dist/react-datepicker.css';
 
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
-if (!PUBLISHABLE_KEY) {
-  throw new Error('Missing Clerk Publishable Key');
-}
+const rootElement = document.getElementById('root')!;
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <ThemeProvider>
-      <ClerkProvider
-        publishableKey={PUBLISHABLE_KEY}
-        appearance={{
-          layout: {
-            socialButtonsVariant: 'iconButton',
-            logoImageUrl: '/icons/cclogo.png',
-          },
-          variables: {
-            colorText: '#fff',
-            colorPrimary: '#6B46C1',
-            colorBackground: '#0A0A0A',
-            colorInputBackground: '#1A1A1A',
-            colorInputText: '#fff',
-          },
-        }}
-      >
-        <App />
-      </ClerkProvider>
-    </ThemeProvider>
-  </React.StrictMode>
-);
+if (!PUBLISHABLE_KEY) {
+  ReactDOM.createRoot(rootElement).render(
+    <div className="flex h-screen w-full flex-col items-center justify-center bg-black p-6 text-center text-white">
+      <div className="max-w-md rounded-2xl border border-red-500/20 bg-neutral-900 p-8 shadow-2xl">
+        <h1 className="text-xl font-bold text-red-400 mb-2">Configuration Required</h1>
+        <p className="text-sm text-neutral-300 mb-4">
+          Missing Clerk Publishable Key. Please create a <code className="bg-neutral-800 px-1 py-0.5 rounded text-amber-300">frontend/.env</code> file and add:
+        </p>
+        <pre className="rounded bg-black p-3 text-left font-mono text-xs text-emerald-400 overflow-x-auto">
+          VITE_CLERK_PUBLISHABLE_KEY=pk_test_...
+        </pre>
+      </div>
+    </div>
+  );
+} else {
+  ReactDOM.createRoot(rootElement).render(
+    <React.StrictMode>
+      <ThemeProvider>
+        <ClerkProvider
+          publishableKey={PUBLISHABLE_KEY}
+          appearance={{
+            layout: {
+              socialButtonsVariant: 'iconButton',
+              logoImageUrl: '/icons/logo.png',
+            },
+            variables: {
+              colorText: '#fff',
+              colorPrimary: '#6B46C1',
+              colorBackground: '#0A0A0A',
+              colorInputBackground: '#1A1A1A',
+              colorInputText: '#fff',
+            },
+          }}
+        >
+          <App />
+        </ClerkProvider>
+      </ThemeProvider>
+    </React.StrictMode>
+  );
+}

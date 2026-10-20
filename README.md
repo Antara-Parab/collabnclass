@@ -85,6 +85,7 @@ Create a .env file in the frontend directory:
 VITE_CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
 VITE_STREAM_API_KEY=your_stream_api_key
 VITE_BASE_URL=http://localhost:3000
+VITE_BE_URL=http://localhost:4000
 VITE_SUPABASE_URL=your_supabase_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
