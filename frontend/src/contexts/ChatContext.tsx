@@ -64,10 +64,13 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
           timestamp: message.timestamp.toISOString(),
         },
       });
+      // Optimistically append sender's own message to local state
+      setMessages((prev) => [...prev, message]);
     } catch (err) {
       console.error("Failed to send message", err);
     }
   }, [call]);
+
   const clearMessages = useCallback(() => {
     setMessages([]);
     if (call) {
@@ -94,4 +97,3 @@ export const useChat = () => {
   }
   return context;
 };
-

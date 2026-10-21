@@ -17,7 +17,8 @@ interface GitHubFileItem {
 }
 
 interface RepoImporterProps {
-  onClose: () => void;
+  onClose?: () => void;
+  embedded?: boolean;
 }
 
 // Map file extensions to Shiki language identifiers
@@ -97,13 +98,13 @@ const FileViewer = ({
   return (
     <div className="mt-3 flex-1 flex flex-col min-h-0">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs font-medium text-dark-2 dark:text-white truncate">
+        <span className="text-xs font-medium text-neutral-300 truncate">
           {selectedFilePath}
         </span>
       </div>
-      <div className="flex-1 overflow-auto rounded bg-[#0d1117] p-2 text-xs font-mono">
+      <div className="flex-1 overflow-auto rounded-xl bg-[#08121f] border border-[rgba(0,180,255,0.14)] p-3 text-xs font-mono no-scrollbar">
         {isFileLoading ? (
-          <div className="flex items-center gap-2 text-neutral-400 p-2">
+          <div className="flex items-center gap-2 text-cyan-300 p-2">
             <Loader2 className="w-4 h-4 animate-spin" />
             <span>Loading file…</span>
           </div>
@@ -120,7 +121,7 @@ const FileViewer = ({
   );
 };
 
-const GithubRepoImporter = ({ onClose }: RepoImporterProps) => {
+const GithubRepoImporter = ({ onClose, embedded = false }: RepoImporterProps) => {
   const { userId, getToken } = useAuth();
   const call = useCall();
   const { toast } = useToast();
@@ -272,10 +273,10 @@ const GithubRepoImporter = ({ onClose }: RepoImporterProps) => {
         return a.name.localeCompare(b.name);
       })
       .map((item) => (
-        <div key={item.path} style={{ marginLeft: `${level * 16}px` }}>
+        <div key={item.path} style={{ marginLeft: `${level * 14}px` }}>
           <div
-            className={`flex items-center gap-2 py-1 px-2 hover:bg-light-3 dark:hover:bg-dark-3 rounded cursor-pointer transition-colors ${
-              selectedFilePath === item.path ? 'bg-light-3 dark:bg-dark-3' : ''
+            className={`flex items-center gap-1.5 py-1 px-2 hover:bg-white/[0.06] rounded-lg cursor-pointer transition-colors text-xs ${
+              selectedFilePath === item.path ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30' : 'text-neutral-300'
             }`}
             onClick={() =>
               item.type === 'dir'
@@ -285,21 +286,21 @@ const GithubRepoImporter = ({ onClose }: RepoImporterProps) => {
           >
             {item.type === 'dir' ? (
               expandedFolders.has(item.path) ? (
-                <ChevronDown className="w-4 h-4 shrink-0" />
+                <ChevronDown className="w-3.5 h-3.5 shrink-0 text-neutral-400" />
               ) : (
-                <ChevronRight className="w-4 h-4 shrink-0" />
+                <ChevronRight className="w-3.5 h-3.5 shrink-0 text-neutral-400" />
               )
             ) : (
-              <div className="w-4 h-4 shrink-0" />
+              <div className="w-3.5 h-3.5 shrink-0" />
             )}
             {item.type === 'dir' ? (
-              <Folder className="w-4 h-4 text-blue-500 shrink-0" />
+              <Folder className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
             ) : (
-              <File className="w-4 h-4 text-gray-500 shrink-0" />
+              <File className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
             )}
-            <span className="text-sm text-dark-2 dark:text-white truncate">{item.name}</span>
+            <span className="truncate">{item.name}</span>
             {item.type === 'file' && item.download_url && (
-              <Link className="w-4 h-4 text-gray-400 ml-auto shrink-0" />
+              <Link className="w-3 h-3 text-neutral-500 ml-auto shrink-0" />
             )}
           </div>
           {item.type === 'dir' && expandedFolders.has(item.path) && (
@@ -307,8 +308,8 @@ const GithubRepoImporter = ({ onClose }: RepoImporterProps) => {
               {item.children && item.children.length > 0 ? (
                 renderFileTree(item.children, level + 1)
               ) : (
-                <div className="flex items-center gap-1 text-xs text-gray-500 ml-6 py-1">
-                  <Loader2 className="w-3 h-3 animate-spin" />
+                <div className="flex items-center gap-1 text-[11px] text-neutral-400 ml-5 py-1">
+                  <Loader2 className="w-3 h-3 animate-spin text-cyan-400" />
                   Loading…
                 </div>
               )}
@@ -318,10 +319,13 @@ const GithubRepoImporter = ({ onClose }: RepoImporterProps) => {
       ));
 
   const repoDetails = repoInfo && (
-    <div className="space-y-1 mb-3">
-      <h3 className="font-semibold text-dark-2 dark:text-white">{repoInfo.full_name}</h3>
+    <div className="p-3 mb-2 rounded-xl bg-white/[0.03] border border-[rgba(0,180,255,0.15)] space-y-1">
+      <div className="flex items-center gap-2">
+        <Github className="w-4 h-4 text-cyan-400 shrink-0" />
+        <h3 className="font-semibold text-xs text-white truncate">{repoInfo.full_name}</h3>
+      </div>
       {repoInfo.description && (
-        <p className="text-sm text-dark-2/70 dark:text-white/70">{repoInfo.description}</p>
+        <p className="text-[11px] text-neutral-400 line-clamp-2">{repoInfo.description}</p>
       )}
     </div>
   );
@@ -329,8 +333,8 @@ const GithubRepoImporter = ({ onClose }: RepoImporterProps) => {
   const filePanel = repoInfo ? (
     <div className="flex-1 flex flex-col min-h-0">
       {repoDetails}
-      <h4 className="font-medium text-dark-2 dark:text-white mb-2">Files</h4>
-      <div className="overflow-y-auto rounded border border-light-4 dark:border-dark-4 bg-light-2/60 dark:bg-dark-3/60 max-h-64">
+      <h4 className="font-medium text-xs text-neutral-300 mb-1.5 px-1">Files</h4>
+      <div className="overflow-y-auto rounded-xl border border-[rgba(0,180,255,0.14)] bg-[#051120]/70 max-h-56 p-2 no-scrollbar">
         {renderFileTree(fileTree)}
       </div>
       <FileViewer
@@ -341,14 +345,64 @@ const GithubRepoImporter = ({ onClose }: RepoImporterProps) => {
     </div>
   ) : null;
 
+  // Embedded dock rendering
+  if (embedded) {
+    return (
+      <div className="flex flex-col h-full w-full min-h-0 bg-transparent overflow-hidden">
+        {/* If host, allow importing or switching repo */}
+        {isHost && (
+          <div className="p-3 border-b border-[rgba(0,180,255,0.12)] bg-[#020b16]/60">
+            <div className="flex gap-2 items-center">
+              <Input
+                value={repoUrl}
+                onChange={(e) => setRepoUrl(e.target.value)}
+                placeholder="https://github.com/owner/repo"
+                className="flex-1 h-9 text-xs rounded-xl bg-[#061527]/90 border-[rgba(0,180,255,0.2)] text-white placeholder:text-neutral-500 focus-visible:ring-1 focus-visible:ring-cyan-400"
+                onKeyDown={(e) => e.key === 'Enter' && handleImportRepo()}
+              />
+              <Button
+                onClick={handleImportRepo}
+                disabled={!repoUrl.trim() || isLoading}
+                className="h-9 px-3 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white disabled:opacity-40 shadow-[0_0_12px_rgba(0,180,255,0.25)] text-xs flex-shrink-0"
+              >
+                {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Github className="h-4 w-4" />}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        <div className="flex-1 overflow-y-auto p-3 flex flex-col min-h-0 no-scrollbar">
+          {filePanel ?? (
+            <div className="flex flex-col items-center justify-center h-full text-center py-12 text-neutral-400">
+              <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center mb-3">
+                <Github className="w-6 h-6 text-cyan-400" />
+              </div>
+              <p className="text-sm font-medium text-white mb-1">
+                {isHost ? "Import a GitHub Repository" : "No Repository Active"}
+              </p>
+              <p className="text-xs text-neutral-400 max-w-[220px]">
+                {isHost
+                  ? "Enter a public GitHub repository URL above to share code with students."
+                  : "The host has not imported a repository yet. Code will appear here once shared."}
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Standalone mode fallback
   if (!isHost) {
     return (
       <div className="flex flex-col h-[calc(100vh-86px)] w-[400px] bg-light-1 dark:bg-dark-1 border-l border-light-4 dark:border-dark-4">
         <div className="flex items-center justify-between p-4 border-b border-light-4 dark:border-dark-4">
           <h2 className="text-lg font-semibold text-dark-2 dark:text-white">Repository</h2>
-          <Button variant="ghost" size="icon" onClick={onClose}>
-            <X className="h-4 w-4" />
-          </Button>
+          {onClose && (
+            <Button variant="ghost" size="icon" onClick={onClose}>
+              <X className="h-4 w-4" />
+            </Button>
+          )}
         </div>
         <div className="flex-1 p-4 flex flex-col min-h-0">
           {filePanel ?? (
@@ -365,9 +419,11 @@ const GithubRepoImporter = ({ onClose }: RepoImporterProps) => {
     <div className="flex flex-col h-[calc(100vh-86px)] w-[400px] bg-light-1 dark:bg-dark-1 border-l border-light-4 dark:border-dark-4">
       <div className="flex items-center justify-between p-4 border-b border-light-4 dark:border-dark-4">
         <h2 className="text-lg font-semibold text-dark-2 dark:text-white">Import Repository</h2>
-        <Button variant="ghost" size="icon" onClick={onClose}>
-          <X className="h-4 w-4" />
-        </Button>
+        {onClose && (
+          <Button variant="ghost" size="icon" onClick={onClose}>
+            <X className="h-4 w-4" />
+          </Button>
+        )}
       </div>
 
       <div className="p-4 border-b border-light-4 dark:border-dark-4">
