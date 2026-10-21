@@ -15,6 +15,10 @@ import MeetingChat from "./MeetingChat";
 import GithubRepoImporter from "./GithubRepoImporter";
 import Whiteboard from "./Whiteboard";
 import MeetingSideDock, { SideDockTab } from "./MeetingSideDock";
+import {
+  CustomVideoPlaceholder,
+  CustomParticipantViewUI,
+} from "./CustomVideoTileUI";
 import { useCall } from "@stream-io/video-react-sdk";
 import {
   Users,
@@ -38,7 +42,6 @@ import {
 } from "./ui/dropdown-menu";
 import Loader from "./Loader";
 import EndCallButton from "./EndCallButton";
-import VideoTileProfilePicture from "./VideoTileProfilePicture";
 import { formatMeetingCode } from "@/lib/meetingUtils";
 import AttendanceService from "@/services/AttendanceService";
 import { useUser } from "@clerk/clerk-react";
@@ -57,7 +60,8 @@ const MeetingRoom = () => {
   const [activeDockTab, setActiveDockTab] = useState<SideDockTab>("chat");
   const [showWhiteboard, setShowWhiteboard] = useState(false);
 
-  const { useCallCallingState, useParticipants, useLocalParticipant } = useCallStateHooks();
+  const { useCallCallingState, useParticipants, useLocalParticipant } =
+    useCallStateHooks();
   const participants = useParticipants();
   const localParticipant = useLocalParticipant();
   const { messages } = useChat();
@@ -79,9 +83,11 @@ const MeetingRoom = () => {
 
     // Record join when user successfully joins
     if (callingState === CallingState.JOINED && meetingId && userId) {
-      AttendanceService.recordJoin(meetingId, userId, userName).catch((error) => {
-        console.error("Failed to record attendance join:", error);
-      });
+      AttendanceService.recordJoin(meetingId, userId, userName).catch(
+        (error) => {
+          console.error("Failed to record attendance join:", error);
+        }
+      );
     }
 
     // Set up leave tracking when component unmounts or user leaves
@@ -183,18 +189,35 @@ const MeetingRoom = () => {
   const CallLayout = () => {
     switch (layout) {
       case "grid":
-        return <PaginatedGridLayout />;
+        return (
+          <PaginatedGridLayout
+            VideoPlaceholder={CustomVideoPlaceholder}
+            ParticipantViewUI={CustomParticipantViewUI}
+          />
+        );
       case "speaker-right":
-        return <SpeakerLayout participantsBarPosition="left" />;
+        return (
+          <SpeakerLayout
+            participantsBarPosition="left"
+            VideoPlaceholder={CustomVideoPlaceholder}
+            ParticipantViewUISpotlight={CustomParticipantViewUI}
+            ParticipantViewUIBar={CustomParticipantViewUI}
+          />
+        );
       default:
-        return <SpeakerLayout participantsBarPosition="right" />;
+        return (
+          <SpeakerLayout
+            participantsBarPosition="right"
+            VideoPlaceholder={CustomVideoPlaceholder}
+            ParticipantViewUISpotlight={CustomParticipantViewUI}
+            ParticipantViewUIBar={CustomParticipantViewUI}
+          />
+        );
     }
   };
 
   return (
     <section className="relative h-screen w-full overflow-hidden pt-4 text-white bg-[#020813]">
-      <VideoTileProfilePicture />
-
       {/* Meeting Header */}
       <div className="fixed top-4 left-4 right-20 z-30 pointer-events-none">
         <div className="glassmorphism-card px-4 py-3 rounded-2xl max-w-md pointer-events-auto border border-white/10 bg-[#040e1c]/80 backdrop-blur-xl shadow-lg">
