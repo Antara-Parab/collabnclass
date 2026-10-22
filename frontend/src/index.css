@@ -748,3 +748,32 @@ video[srcObject=""] {
   animation: audio-wave-bounce 0.8s infinite ease-in-out 0.4s;
   transform-origin: bottom;
 }
+
+/* ======== Hand Raise Pulsing & Subtle Bounce Animations ======== */
+@keyframes hand-bounce-subtle {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+.animate-hand-bounce {
+  animation: hand-bounce-subtle 1.8s infinite ease-in-out;
+}
+
+@keyframes hand-ring-pulse {
+  0%, 100% {
+    box-shadow: 0 0 12px rgba(245, 158, 11, 0.4), inset 0 0 12px rgba(245, 158, 11, 0.2);
+    border-color: rgba(245, 158, 11, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 24px rgba(245, 158, 11, 0.8), inset 0 0 20px rgba(245, 158, 11, 0.4);
+    border-color: rgba(251, 191, 36, 1);
+  }
+}
+
+.hand-raised-glow {
+  animation: hand-ring-pulse 2s infinite ease-in-out;
+}

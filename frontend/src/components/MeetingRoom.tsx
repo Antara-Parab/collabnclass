@@ -46,10 +46,11 @@ import { formatMeetingCode } from "@/lib/meetingUtils";
 import AttendanceService from "@/services/AttendanceService";
 import { useUser } from "@clerk/clerk-react";
 import { useChat } from "@/contexts/ChatContext";
+import { ClassroomProvider, useClassroom } from "@/contexts/ClassroomContext";
 
 type CallLayoutType = "grid" | "speaker-left" | "speaker-right";
 
-const MeetingRoom = () => {
+const MeetingRoomContent = () => {
   const [searchParams] = useSearchParams();
   const isPersonalRoom = !!searchParams.get("personal");
   const navigate = useNavigate();
@@ -65,12 +66,12 @@ const MeetingRoom = () => {
   const participants = useParticipants();
   const localParticipant = useLocalParticipant();
   const { messages } = useChat();
+  const { isHandRaised, toggleHandRaise, raisedHands } = useClassroom();
 
   const call = useCall();
   const { toast } = useToast();
   const { user } = useUser();
 
-  // for more detail about types of CallingState see: https://getstream.io/video/docs/react/ui-cookbook/ringing-call/#incoming-call-panel
   const callingState = useCallCallingState();
 
   // Track attendance when user joins or leaves meeting
@@ -141,7 +142,6 @@ const MeetingRoom = () => {
       }
     };
 
-    // Subscribe to participant events
     call.on("participantJoined", handleParticipantJoined);
     call.on("participantLeft", handleParticipantLeft);
 
@@ -404,6 +404,27 @@ const MeetingRoom = () => {
             <span className="hidden lg:inline text-xs font-medium">Whiteboard</span>
           </button>
 
+          {/* ✋ Raise Hand Button */}
+          <button
+            onClick={toggleHandRaise}
+            className={cn(
+              "cursor-pointer rounded-xl p-2.5 sm:px-3 sm:py-2 transition-all flex items-center gap-1.5 border",
+              isHandRaised
+                ? "bg-amber-500/25 border-amber-400 text-amber-300 shadow-[0_0_16px_rgba(245,158,11,0.5)] animate-pulse"
+                : "bg-[#102033] text-neutral-300 hover:text-white hover:bg-[#172c47] border-white/5"
+            )}
+            title={
+              isHandRaised
+                ? "Lower your hand"
+                : "Raise your hand to ask a question"
+            }
+          >
+            <span className="text-base leading-none">✋</span>
+            <span className="hidden lg:inline text-xs font-medium">
+              {isHandRaised ? "Hand Raised" : "Raise Hand"}
+            </span>
+          </button>
+
           {/* Chat Button */}
           <button
             onClick={() => handleToggleDock("chat")}
@@ -437,11 +458,18 @@ const MeetingRoom = () => {
           >
             <Users size={18} />
             <span className="hidden lg:inline text-xs font-medium">People</span>
-            {totalParticipantsCount > 0 && (
+            {raisedHands.size > 0 ? (
+              <span
+                className="flex h-4 min-w-4 items-center justify-center rounded-full bg-amber-400 text-black px-1.5 text-[10px] font-extrabold animate-pulse"
+                title={`${raisedHands.size} hand(s) raised`}
+              >
+                ✋ {raisedHands.size}
+              </span>
+            ) : totalParticipantsCount > 0 ? (
               <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 px-1 text-[10px] font-bold">
                 {totalParticipantsCount}
               </span>
-            )}
+            ) : null}
           </button>
 
           {/* AI Assistant Button */}
@@ -478,6 +506,14 @@ const MeetingRoom = () => {
         </div>
       </div>
     </section>
+  );
+};
+
+const MeetingRoom = () => {
+  return (
+    <ClassroomProvider>
+      <MeetingRoomContent />
+    </ClassroomProvider>
   );
 };
 
