@@ -1,13 +1,14 @@
-
 import { avatarImages } from "@/constants";
 import { useToast } from "./ui/use-toast";
-import { Users, Copy, Play, Trash2 } from "lucide-react";
+import { Users, Copy, Play, Trash2, Radio } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface MeetingCardProps {
   title: string;
   date: string;
   icon: string;
   isPreviousMeeting?: boolean;
+  isLive?: boolean;
   buttonIcon1?: string;
   buttonText?: string;
   handleClick: () => void;
@@ -24,6 +25,7 @@ const MeetingCard = ({
   title,
   date,
   isPreviousMeeting,
+  isLive = false,
   buttonIcon1,
   handleClick,
   link,
@@ -66,6 +68,10 @@ const MeetingCard = ({
           background: linear-gradient(90deg, transparent, rgba(0, 180, 255, 0.6), rgba(0,220,255,0.8), rgba(0, 180, 255, 0.6), transparent);
         }
 
+        .meeting-card-live::before {
+          background: linear-gradient(90deg, transparent, rgba(255, 50, 90, 0.8), rgba(255, 100, 140, 1), rgba(255, 50, 90, 0.8), transparent) !important;
+        }
+
         .meeting-card::after {
           content: '';
           position: absolute;
@@ -80,6 +86,11 @@ const MeetingCard = ({
           transform: translateY(-3px);
           box-shadow: 0 0 0 1px rgba(0,200,255,0.15), 0 16px 56px rgba(0,0,0,0.7), 0 0 32px rgba(0,160,255,0.1);
           border-color: rgba(0, 180, 255, 0.25);
+        }
+
+        .meeting-card-live {
+          border-color: rgba(255, 50, 90, 0.35) !important;
+          box-shadow: 0 0 0 1px rgba(255, 50, 90, 0.15), 0 16px 56px rgba(0,0,0,0.75), 0 0 36px rgba(255, 30, 80, 0.15) !important;
         }
 
         .card-glow-orb {
@@ -100,6 +111,12 @@ const MeetingCard = ({
           background: linear-gradient(135deg, rgba(0, 140, 255, 0.15), rgba(0, 80, 180, 0.08));
           border: 1px solid rgba(0, 160, 255, 0.2);
           box-shadow: 0 0 16px rgba(0, 140, 255, 0.1);
+        }
+
+        .card-icon-wrapper-live {
+          background: linear-gradient(135deg, rgba(255, 50, 90, 0.2), rgba(180, 20, 60, 0.1)) !important;
+          border-color: rgba(255, 60, 110, 0.35) !important;
+          box-shadow: 0 0 16px rgba(255, 50, 90, 0.25) !important;
         }
 
         .card-title {
@@ -180,6 +197,19 @@ const MeetingCard = ({
           box-shadow: 0 4px 14px rgba(0, 100, 220, 0.35), inset 0 1px 0 rgba(255,255,255,0.1);
           position: relative;
           overflow: hidden;
+        }
+
+        .btn-primary-live {
+          background: linear-gradient(135deg, #e11d48, #be123c) !important;
+          box-shadow: 0 4px 16px rgba(225, 29, 72, 0.45), inset 0 1px 0 rgba(255,255,255,0.2) !important;
+          color: #ffffff !important;
+          font-weight: 600 !important;
+        }
+
+        .btn-primary-live:hover {
+          background: linear-gradient(135deg, #f43f5e, #e11d48) !important;
+          box-shadow: 0 6px 24px rgba(225, 29, 72, 0.6) !important;
+          transform: translateY(-1px);
         }
 
         .btn-primary::before {
@@ -280,7 +310,33 @@ const MeetingCard = ({
           flex-wrap: wrap;
         }
 
-        .badge-live {
+        /* ── Status Badges ── */
+        .badge-live-now {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 4px 12px;
+          border-radius: 20px;
+          font-size: 0.72rem;
+          font-weight: 800;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          background: rgba(225, 29, 72, 0.16);
+          border: 1px solid rgba(244, 63, 94, 0.55);
+          color: #fda4af;
+          box-shadow: 0 0 16px rgba(225, 29, 72, 0.35);
+        }
+
+        .badge-live-now-dot {
+          width: 7px;
+          height: 7px;
+          border-radius: 50%;
+          background: #f43f5e;
+          box-shadow: 0 0 8px #f43f5e, 0 0 14px #e11d48;
+          animation: pulse-dot 1.2s ease-in-out infinite;
+        }
+
+        .badge-upcoming {
           display: inline-flex;
           align-items: center;
           gap: 5px;
@@ -290,37 +346,67 @@ const MeetingCard = ({
           font-weight: 600;
           letter-spacing: 0.05em;
           text-transform: uppercase;
-          background: rgba(0, 200, 120, 0.1);
-          border: 1px solid rgba(0, 200, 120, 0.25);
-          color: rgba(0, 220, 140, 0.9);
+          background: rgba(0, 180, 255, 0.1);
+          border: 1px solid rgba(0, 180, 255, 0.25);
+          color: rgba(100, 210, 255, 0.9);
         }
 
-        .badge-live-dot {
+        .badge-upcoming-dot {
           width: 5px; height: 5px;
           border-radius: 50%;
-          background: #00dc8c;
-          animation: pulse-dot 1.5s ease-in-out infinite;
+          background: #00e5ff;
+          box-shadow: 0 0 6px #00e5ff;
+          animation: pulse-dot 2s ease-in-out infinite;
+        }
+
+        .badge-ended {
+          display: inline-flex;
+          align-items: center;
+          padding: 3px 10px;
+          border-radius: 20px;
+          font-size: 0.7rem;
+          font-weight: 500;
+          letter-spacing: 0.04em;
+          text-transform: uppercase;
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          color: rgba(200, 215, 230, 0.6);
         }
 
         @keyframes pulse-dot {
           0%, 100% { opacity: 1; transform: scale(1); }
-          50% { opacity: 0.5; transform: scale(0.8); }
+          50% { opacity: 0.4; transform: scale(0.75); }
         }
       `}</style>
 
-      <section className="meeting-card">
+      <section className={cn("meeting-card", isLive && "meeting-card-live")}>
         <div className="card-glow-orb" />
 
         {/* Top: Icon + Title */}
         <article style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div className="card-icon-wrapper">
-              <img src={icon} alt="meeting type" width={22} height={22} />
+            <div className={cn("card-icon-wrapper", isLive && "card-icon-wrapper-live")}>
+              {isLive ? (
+                <Radio className="w-5 h-5 text-rose-400 animate-pulse" />
+              ) : (
+                <img src={icon} alt="meeting type" width={22} height={22} />
+              )}
             </div>
-            {!isPreviousMeeting && (
-              <span className="badge-live">
-                <span className="badge-live-dot" />
-                Upcoming
+
+            {/* Dynamic Status Badges */}
+            {isLive ? (
+              <span className="badge-live-now animate-pulse">
+                <span className="badge-live-now-dot" />
+                LIVE NOW
+              </span>
+            ) : isPreviousMeeting ? (
+              <span className="badge-ended">
+                Ended
+              </span>
+            ) : (
+              <span className="badge-upcoming">
+                <span className="badge-upcoming-dot" />
+                Scheduled
               </span>
             )}
           </div>
@@ -363,16 +449,31 @@ const MeetingCard = ({
           )}
 
           <div className="actions-row">
-            {/* Primary CTA — always shown */}
-            <button className="btn-primary" onClick={handleClick}>
-              {buttonIcon1
-                ? <img src={buttonIcon1} alt="" width={15} height={15} />
-                : <Play size={13} />
-              }
-              {buttonText || 'Start'}
+            {/* Primary CTA */}
+            <button
+              className={cn("btn-primary", isLive && "btn-primary-live")}
+              onClick={handleClick}
+            >
+              {isLive ? (
+                <>
+                  <span className="relative flex h-2 w-2 mr-1">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-white" />
+                  </span>
+                  <span>Join Live Class</span>
+                </>
+              ) : (
+                <>
+                  {buttonIcon1
+                    ? <img src={buttonIcon1} alt="" width={15} height={15} />
+                    : <Play size={13} />
+                  }
+                  <span>{buttonText || 'Start'}</span>
+                </>
+              )}
             </button>
 
-            {/* Copy Link — always shown */}
+            {/* Copy Link */}
             <button
               className="btn-ghost"
               onClick={() => {

@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import MeetingTypeList from "@/components/MeetingTypeList";
+import { useGetCalls } from "@/hooks/useGetCalls";
 
 // Animated SVG wave layer
 const OceanWaves = () => (
@@ -211,6 +213,8 @@ const DepthMeter = () => {
 };
 
 const Home = () => {
+  const navigate = useNavigate();
+  const { liveCalls, upcomingCalls } = useGetCalls();
   const now = new Date();
   const [time, setTime] = useState(
     now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })
@@ -291,29 +295,73 @@ const Home = () => {
         <GlitchLayer time={time} />
 
         <div className="flex h-full flex-col justify-between max-md:px-6 max-md:py-10 lg:p-12 relative z-10">
-          {/* Status badge */}
-          <div
-            className="max-w-[280px] rounded-xl py-3 px-6 text-center text-sm font-medium backdrop-blur-xl transition-all duration-300 hover:scale-105 hover:border-cyan-400/40 cursor-default"
-            style={{
-              background: "rgba(0,30,60,0.7)",
-              border: "1px solid rgba(0,180,255,0.2)",
-              boxShadow:
-                "0 0 20px rgba(0,100,200,0.15), inset 0 1px 0 rgba(0,200,255,0.1)",
-            }}
-          >
-            <div className="flex items-center justify-center gap-2">
-              <div
-                className="w-2 h-2 rounded-full animate-pulse"
-                style={{
-                  backgroundColor: "#00e5ff",
-                  boxShadow: "0 0 8px rgba(0,229,255,0.8)",
-                }}
-              />
-              <span style={{ color: "rgba(180,230,255,0.95)" }}>
-                No Upcoming Meeting
+          {/* Dynamic Status Badge (Live Now / Next Upcoming) */}
+          {liveCalls && liveCalls.length > 0 ? (
+            <div
+              onClick={() => navigate(`/meeting/${liveCalls[0].id}`)}
+              className="cursor-pointer max-w-[340px] rounded-2xl py-2.5 px-4 text-center backdrop-blur-xl border border-rose-500/60 bg-rose-950/80 shadow-[0_0_25px_rgba(244,63,94,0.4)] hover:scale-105 transition-all flex items-center justify-between gap-3 group/live"
+            >
+              <div className="flex items-center gap-2.5">
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500 shadow-[0_0_8px_#f43f5e]" />
+                </span>
+                <div className="flex flex-col text-left">
+                  <span className="text-[10px] font-extrabold text-rose-300 uppercase tracking-widest leading-none">
+                    🔴 Live Class in Session
+                  </span>
+                  <span className="text-xs font-bold text-white truncate max-w-[150px] mt-0.5">
+                    {liveCalls[0]?.state?.custom?.description || "In Session"}
+                  </span>
+                </div>
+              </div>
+              <span className="text-[11px] font-bold px-3 py-1 rounded-xl bg-rose-500 group-hover/live:bg-rose-400 text-white shadow-md transition-colors flex items-center gap-1">
+                Join Now →
               </span>
             </div>
-          </div>
+          ) : upcomingCalls && upcomingCalls.length > 0 ? (
+            <div
+              onClick={() => navigate('/upcoming')}
+              className="cursor-pointer max-w-[320px] rounded-2xl py-2.5 px-4 text-center backdrop-blur-xl border border-cyan-500/30 bg-[#001b36]/75 shadow-[0_0_20px_rgba(0,180,255,0.2)] hover:scale-105 transition-all flex items-center justify-between gap-3"
+            >
+              <div className="flex items-center gap-2.5">
+                <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_8px_rgba(0,229,255,0.8)]" />
+                <div className="flex flex-col text-left">
+                  <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-wider leading-none">
+                    Upcoming Class
+                  </span>
+                  <span className="text-xs font-semibold text-white/90 truncate max-w-[180px] mt-0.5">
+                    {upcomingCalls[0]?.state?.startsAt
+                      ? new Date(upcomingCalls[0].state.startsAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' · ' + (upcomingCalls[0]?.state?.custom?.description || 'Scheduled')
+                      : "Scheduled"}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div
+              className="max-w-[280px] rounded-xl py-3 px-6 text-center text-sm font-medium backdrop-blur-xl transition-all duration-300 hover:scale-105 hover:border-cyan-400/40 cursor-default"
+              style={{
+                background: "rgba(0,30,60,0.7)",
+                border: "1px solid rgba(0,180,255,0.2)",
+                boxShadow:
+                  "0 0 20px rgba(0,100,200,0.15), inset 0 1px 0 rgba(0,200,255,0.1)",
+              }}
+            >
+              <div className="flex items-center justify-center gap-2">
+                <div
+                  className="w-2 h-2 rounded-full animate-pulse"
+                  style={{
+                    backgroundColor: "#00e5ff",
+                    boxShadow: "0 0 8px rgba(0,229,255,0.8)",
+                  }}
+                />
+                <span style={{ color: "rgba(180,230,255,0.95)" }}>
+                  No Upcoming Meeting
+                </span>
+              </div>
+            </div>
+          )}
 
           {/* Time + date */}
           <div className="flex flex-col gap-2">
