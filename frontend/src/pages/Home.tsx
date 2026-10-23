@@ -627,14 +627,14 @@ const Home = () => {
 
       {/* ===================== PRIMARY ACTION CARDS ===================== */}
       <div>
-        <div className="flex items-center justify-between mb-3 sm:mb-4">
-          <div className="flex items-center gap-2">
-            <div className="size-2 rounded-full bg-cyan-400 shadow-[0_0_8px_#00e5ff]" />
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2.5">
+            <span className="size-2 rounded-full bg-cyan-400 shadow-[0_0_10px_#00e5ff] flex-shrink-0" />
             <h2 className="text-lg sm:text-xl font-bold tracking-tight text-white">
               Classroom Operations
             </h2>
           </div>
-          <span className="text-xs text-slate-400 hidden sm:inline">
+          <span className="text-xs text-slate-400 font-medium hidden sm:inline">
             Quick Actions & Session Controls
           </span>
         </div>
@@ -645,8 +645,8 @@ const Home = () => {
       <div className="glass-cyber-panel rounded-2xl sm:rounded-3xl p-5 sm:p-7 border border-cyan-500/20">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-5 sm:mb-6">
           <div>
-            <div className="flex items-center gap-2">
-              <span className="size-2 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_8px_#00e5ff]" />
+            <div className="flex items-center gap-2.5">
+              <span className="size-2 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_10px_#00e5ff] flex-shrink-0" />
               <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
                 Classroom Dispatch
               </h2>
