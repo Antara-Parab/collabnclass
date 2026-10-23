@@ -33,7 +33,6 @@ video {
 .str-video__screen-share,
 .str-video__screen-share video,
 [class*="screen-share"] video,
-[class*="screen-share"] video,
 .str-video__participant-view[data-screen-share="true"] video,
 .str-video__participant-view:has([class*="screen"]) video,
 .str-video__participant-view:has([data-testid*="screen"]) video {
@@ -356,64 +355,141 @@ video[srcObject=""] {
 
 /* ======== Modern Glassmorphism Styles ======== */
 .glassmorphism {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(4, 14, 28, 0.65);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
 .glassmorphism2 {
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(2, 8, 19, 0.75);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
 
 .glassmorphism-card {
-  background: rgba(17, 17, 17, 0.75);
+  background: rgba(4, 14, 28, 0.75);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(0, 180, 255, 0.16);
   box-shadow: 0 4px 24px 0 rgba(0, 0, 0, 0.4);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .glassmorphism-card:hover {
-  background: rgba(17, 17, 17, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6);
+  background: rgba(7, 22, 43, 0.85);
+  border: 1px solid rgba(0, 229, 255, 0.45);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5), 0 0 20px rgba(0, 229, 255, 0.2);
   transform: translateY(-2px);
 }
 
 .glassmorphism-button {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(4, 14, 28, 0.6);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(0, 180, 255, 0.2);
   transition: all 0.2s ease;
 }
 
 .glassmorphism-button:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(7, 22, 43, 0.8);
+  border: 1px solid rgba(0, 229, 255, 0.45);
+  box-shadow: 0 0 12px rgba(0, 229, 255, 0.2);
   transform: translateY(-1px);
 }
 
 .glassmorphism-button-active {
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(7, 22, 43, 0.9);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(0, 229, 255, 0.5);
+  box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.4), 0 0 15px rgba(0, 229, 255, 0.25);
 }
 
-/* ======== Modern Dark Theme Variables ======== */
+@layer components {
+  .glass-cyber-panel {
+    background: rgba(4, 14, 28, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(0, 180, 255, 0.16);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.45);
+  }
+
+  .glass-cyber-elevated {
+    background: rgba(7, 22, 43, 0.9);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(0, 229, 255, 0.25);
+    box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.6), 0 0 15px rgba(0, 180, 255, 0.15);
+  }
+
+  .glass-cyber-card {
+    background: rgba(4, 14, 28, 0.75);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(0, 180, 255, 0.16);
+    box-shadow: 0 4px 24px 0 rgba(0, 0, 0, 0.4);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .glass-cyber-card:hover {
+    background: rgba(7, 22, 43, 0.85);
+    border-color: rgba(0, 229, 255, 0.45);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5), 0 0 20px rgba(0, 229, 255, 0.2);
+    transform: translateY(-2px);
+  }
+
+  .btn-cyber-primary {
+    background: linear-gradient(135deg, #0284c7 0%, #00e5ff 100%);
+    color: #020813;
+    font-weight: 600;
+    border: 1px solid rgba(0, 229, 255, 0.5);
+    box-shadow: 0 0 15px rgba(0, 229, 255, 0.3);
+    transition: all 0.25s ease;
+  }
+
+  .btn-cyber-primary:hover {
+    box-shadow: 0 0 25px rgba(0, 229, 255, 0.6);
+    transform: translateY(-1px);
+  }
+
+  .btn-cyber-ghost {
+    background: rgba(4, 14, 28, 0.6);
+    color: #00e5ff;
+    border: 1px solid rgba(0, 180, 255, 0.25);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    transition: all 0.2s ease;
+  }
+
+  .btn-cyber-ghost:hover {
+    background: rgba(7, 22, 43, 0.85);
+    border-color: rgba(0, 229, 255, 0.6);
+    box-shadow: 0 0 15px rgba(0, 229, 255, 0.25);
+  }
+}
+
+/* ======== Ocean Dark Cyberpunk Design Tokens & CSS Variables ======== */
 :root {
-  --glass-bg: rgba(17, 17, 17, 0.85);
-  --glass-border: rgba(255, 255, 255, 0.08);
-  --glass-hover: rgba(255, 255, 255, 0.12);
-  --text-primary: #ffffff;
-  --text-secondary: rgba(255, 255, 255, 0.7);
-  --text-muted: rgba(255, 255, 255, 0.5);
-  --accent: #1a1a1a;
-  --accent-hover: #2a2a2a;
+  /* Core Ocean Dark surfaces */
+  --bg-cyber-base: #020813;
+  --bg-cyber-surface: #040e1c;
+  --bg-cyber-elevated: #07162b;
+  --bg-cyber-muted: #0c1a2e;
+
+  /* Ocean Dark Glassmorphism borders & accents */
+  --border-cyber-subtle: rgba(0, 180, 255, 0.16);
+  --border-cyber-glow: rgba(0, 229, 255, 0.45);
+  --accent-cyan: #00e5ff;
+  --accent-blue: #0284c7;
+
+  /* Glass backdrop & legacy compatibility tokens */
+  --glass-bg: rgba(4, 14, 28, 0.85);
+  --glass-border: rgba(0, 180, 255, 0.16);
+  --glass-hover: rgba(0, 229, 255, 0.25);
+  --text-primary: #f0f9ff;
+  --text-secondary: rgba(240, 249, 255, 0.75);
+  --text-muted: rgba(240, 249, 255, 0.5);
+  --accent: #040e1c;
+  --accent-hover: #07162b;
 }
 
 /* ======== stream css overrides ======== */
@@ -556,22 +632,22 @@ video[srcObject=""] {
 }
 
 .str-video__participant-list {
-  background: rgba(17, 17, 17, 0.95);
+  background: rgba(4, 14, 28, 0.95);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(0, 180, 255, 0.18);
   padding: 16px;
   border-radius: 16px;
   color: white;
   height: 100%;
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5), 0 0 20px rgba(0, 229, 255, 0.08);
 }
 
 .dark .str-video__participant-list {
-  background: rgba(17, 17, 17, 0.95);
+  background: rgba(4, 14, 28, 0.95);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(0, 180, 255, 0.18);
 }
 
 :not(.dark) .str-video__participant-list {
@@ -584,17 +660,18 @@ video[srcObject=""] {
 
 .str-video__call-controls__button {
   height: 40px;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(4, 14, 28, 0.75);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(0, 180, 255, 0.2);
   border-radius: 12px;
   transition: all 0.2s ease;
 }
 
 .str-video__call-controls__button:hover {
-  background: rgba(0, 0, 0, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(7, 22, 43, 0.95);
+  border: 1px solid rgba(0, 229, 255, 0.5);
+  box-shadow: 0 0 12px rgba(0, 229, 255, 0.25);
   transform: translateY(-1px);
 }
 
@@ -669,9 +746,19 @@ video[srcObject=""] {
   }
 }
 
-/* Smooth transitions */
-* {
-  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+/* Smooth targeted transitions for interactive elements without universal DOM paint penalties */
+button,
+a,
+input,
+select,
+textarea,
+.glassmorphism-card,
+.glassmorphism-button,
+.glass-cyber-card,
+.btn-cyber-primary,
+.btn-cyber-ghost,
+.str-video__call-controls__button {
+  transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
 }
 
 /* Gradient animation for text */
