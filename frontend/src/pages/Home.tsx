@@ -1,7 +1,30 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { useUser } from "@clerk/clerk-react";
+import { useStreamVideoClient } from "@stream-io/video-react-sdk";
 import MeetingTypeList from "@/components/MeetingTypeList";
 import { useGetCalls } from "@/hooks/useGetCalls";
+import { useToast } from "@/components/ui/use-toast";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  Radio,
+  Calendar,
+  Sparkles,
+  Zap,
+  ArrowRight,
+  Copy,
+  Check,
+  Video,
+  ExternalLink,
+  Users,
+  Clock,
+  PenTool,
+  Bot,
+  Activity,
+  ShieldCheck,
+  KeyRound
+} from "lucide-react";
 
 // Animated SVG wave layer
 const OceanWaves = () => (
@@ -33,15 +56,6 @@ const OceanWaves = () => (
       @keyframes waveMove {
         0%, 100% { d: path("M0,60 C180,100 360,20 540,60 C720,100 900,20 1080,60 C1260,100 1380,40 1440,60 L1440,120 L0,120 Z"); }
         50% { d: path("M0,40 C180,70 360,10 540,50 C720,90 900,10 1080,50 C1260,90 1380,30 1440,45 L1440,120 L0,120 Z"); }
-      }
-      @keyframes drift {
-        0%, 100% { transform: translateY(0px) translateX(0px); opacity: 0.6; }
-        33% { transform: translateY(-12px) translateX(6px); opacity: 1; }
-        66% { transform: translateY(-6px) translateX(-4px); opacity: 0.8; }
-      }
-      @keyframes scanline {
-        0% { transform: translateY(-100%); }
-        100% { transform: translateY(400%); }
       }
       @keyframes depthPulse {
         0%, 100% { opacity: 0.15; transform: scale(1); }
@@ -114,7 +128,7 @@ const Scanlines = () => (
 // Glitch duplicate of the time text
 const GlitchLayer = ({ time }: { time: string }) => (
   <div
-    className="absolute inset-0 pointer-events-none"
+    className="absolute inset-0 pointer-events-none hidden md:block"
     aria-hidden
     style={{
       font: "inherit",
@@ -124,7 +138,7 @@ const GlitchLayer = ({ time }: { time: string }) => (
   >
     <span
       className="text-5xl font-extrabold lg:text-8xl tracking-tight"
-      style={{ position: "absolute", bottom: "3rem", left: "3rem" }}
+      style={{ position: "absolute", bottom: "2.5rem", left: "3rem" }}
     >
       {time}
     </span>
@@ -133,9 +147,9 @@ const GlitchLayer = ({ time }: { time: string }) => (
 
 // Depth sonar ring
 const SonarRing = () => (
-  <div className="absolute top-8 right-8 pointer-events-none">
+  <div className="absolute top-8 right-8 pointer-events-none hidden sm:block">
     <div
-      className="w-20 h-20 rounded-full border flex items-center justify-center"
+      className="w-20 h-20 rounded-full border flex items-center justify-center relative"
       style={{
         borderColor: "rgba(0,180,255,0.2)",
         background: "rgba(0,20,50,0.4)",
@@ -184,16 +198,16 @@ const DepthMeter = () => {
   useEffect(() => {
     const id = setInterval(() => {
       setDepth((d) => d + Math.floor(Math.random() * 5) - 2);
-    }, 2000);
+    }, 3000);
     return () => clearInterval(id);
   }, []);
 
   return (
     <div
-      className="absolute left-4 top-1/2 -translate-y-1/2 flex flex-col items-center gap-1 pointer-events-none"
+      className="absolute left-4 top-1/2 -translate-y-1/2 hidden md:flex flex-col items-center gap-1 pointer-events-none"
       style={{ opacity: 0.6 }}
     >
-      <div className="w-px h-16 rounded-full" style={{ background: "linear-gradient(to bottom, transparent, rgba(0,200,255,0.6))" }} />
+      <div className="w-px h-12 rounded-full" style={{ background: "linear-gradient(to bottom, transparent, rgba(0,200,255,0.6))" }} />
       <div
         className="text-[9px] font-mono tracking-widest px-2 py-1 rounded"
         style={{
@@ -207,19 +221,28 @@ const DepthMeter = () => {
       >
         {depth}m
       </div>
-      <div className="w-px h-16 rounded-full" style={{ background: "linear-gradient(to top, transparent, rgba(0,200,255,0.6))" }} />
+      <div className="w-px h-12 rounded-full" style={{ background: "linear-gradient(to top, transparent, rgba(0,200,255,0.6))" }} />
     </div>
   );
 };
 
 const Home = () => {
   const navigate = useNavigate();
-  const { liveCalls, upcomingCalls } = useGetCalls();
+  const { user } = useUser();
+  const client = useStreamVideoClient();
+  const { toast } = useToast();
+  const { liveCalls, upcomingCalls, endedCalls } = useGetCalls();
+
   const now = new Date();
   const [time, setTime] = useState(
     now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })
   );
   const date = new Intl.DateTimeFormat("en-US", { dateStyle: "full" }).format(now);
+
+  // Command bar quick join input
+  const [quickCode, setQuickCode] = useState("");
+  const [isJoining, setIsJoining] = useState(false);
+  const [isCopiedPersonal, setIsCopiedPersonal] = useState(false);
 
   // Live clock
   useEffect(() => {
@@ -231,49 +254,171 @@ const Home = () => {
     return () => clearInterval(id);
   }, []);
 
+  // Time-of-day greeting
+  const greeting = useMemo(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good morning";
+    if (hour < 17) return "Good afternoon";
+    return "Good evening";
+  }, []);
+
+  // Personal meeting link
+  const personalRoomLink = useMemo(() => {
+    if (!user?.id) return "";
+    const baseUrl = import.meta.env.VITE_BASE_URL || window.location.origin;
+    return `${baseUrl}/meeting/${user.id}?personal=true`;
+  }, [user?.id]);
+
+  const copyPersonalRoomLink = () => {
+    if (!personalRoomLink) return;
+    navigator.clipboard.writeText(personalRoomLink);
+    setIsCopiedPersonal(true);
+    toast({ title: "Personal Classroom Link Copied!" });
+    setTimeout(() => setIsCopiedPersonal(false), 2500);
+  };
+
+  // Direct Quick Join Handler
+  const handleQuickJoin = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const rawInput = quickCode.trim();
+    if (!rawInput) {
+      toast({
+        title: "Please enter a code or URL",
+        description: "Type an 8-character meeting code or paste a meeting link.",
+      });
+      return;
+    }
+
+    if (!client) {
+      toast({ title: "Connecting video client, please retry..." });
+      return;
+    }
+
+    setIsJoining(true);
+    try {
+      // 1. Full URL check
+      const urlMatch = rawInput.match(/\/meeting\/([a-zA-Z0-9_\-]+)/);
+      if (urlMatch && urlMatch[1]) {
+        navigate(`/meeting/${urlMatch[1]}`);
+        toast({ title: "Connecting to classroom..." });
+        return;
+      }
+
+      // 2. UUID check
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (uuidRegex.test(rawInput)) {
+        navigate(`/meeting/${rawInput}`);
+        toast({ title: "Connecting to classroom..." });
+        return;
+      }
+
+      // 3. 8-digit meeting code check
+      const normalizedCode = rawInput.replace(/[^A-Z0-9]/gi, "").toUpperCase();
+      if (normalizedCode.length !== 8) {
+        toast({
+          title: "Invalid classroom code",
+          description: "Meeting code must be 8 alphanumeric characters.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const { calls } = await client.queryCalls({
+        filter_conditions: { "custom.meetingCode": normalizedCode },
+        limit: 1,
+      });
+
+      if (calls.length === 0) {
+        toast({
+          title: "Meeting not found",
+          description: "No active classroom found for this code.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const call = calls[0];
+      if (call.state.endedAt) {
+        toast({
+          title: "Meeting has concluded",
+          description: "This classroom session has already ended.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      navigate(`/meeting/${call.id}`);
+      toast({ title: "Entering classroom..." });
+    } catch (err) {
+      toast({
+        title: "Failed to join",
+        description: err instanceof Error ? err.message : "Error joining meeting.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsJoining(false);
+    }
+  };
+
+  // Paste from clipboard helper
+  const handlePasteClipboard = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text) {
+        setQuickCode(text.trim());
+        toast({ title: "Pasted from clipboard" });
+      }
+    } catch {
+      toast({ title: "Could not access clipboard" });
+    }
+  };
+
+  const getRelativeTime = (startsAt?: Date | string) => {
+    if (!startsAt) return "";
+    const timeMs = startsAt instanceof Date ? startsAt.getTime() : new Date(startsAt).getTime();
+    const diffMs = timeMs - Date.now();
+    if (diffMs <= 0) return "In progress";
+    const mins = Math.round(diffMs / 60000);
+    if (mins < 60) return `in ${mins} min${mins === 1 ? "" : "s"}`;
+    const hours = Math.round(mins / 60);
+    return `in ${hours} hr${hours === 1 ? "" : "s"}`;
+  };
+
   return (
-    <section className="w-full flex flex-col gap-8 text-white transition-all duration-300">
+    <section className="w-full flex flex-col gap-10 text-white transition-all duration-300 max-w-7xl mx-auto">
+      {/* ===================== HERO CYBER BANNER ===================== */}
       <div
-        className="h-[320px] w-full rounded-[24px] relative overflow-hidden group"
+        className="h-[340px] w-full rounded-[28px] relative overflow-hidden group"
         style={{
-          background: "linear-gradient(135deg, #020b18 0%, #041526 40%, #062040 100%)",
-          border: "1px solid rgba(0,180,255,0.14)",
-          boxShadow: "0 0 60px rgba(0,100,180,0.18), inset 0 1px 0 rgba(0,200,255,0.08)",
-          transition: "box-shadow 0.5s ease, transform 0.5s ease",
-        }}
-        onMouseEnter={(e) => {
-          (e.currentTarget as HTMLDivElement).style.boxShadow =
-            "0 0 80px rgba(0,150,220,0.35), 0 20px 60px rgba(0,80,160,0.3), inset 0 1px 0 rgba(0,200,255,0.15)";
-        }}
-        onMouseLeave={(e) => {
-          (e.currentTarget as HTMLDivElement).style.boxShadow =
-            "0 0 60px rgba(0,100,180,0.18), inset 0 1px 0 rgba(0,200,255,0.08)";
+          background: "linear-gradient(135deg, #020813 0%, #041224 45%, #061c38 100%)",
+          border: "1px solid rgba(0, 180, 255, 0.2)",
+          boxShadow: "0 0 60px rgba(0, 100, 180, 0.22), inset 0 1px 0 rgba(0, 229, 255, 0.12)",
         }}
       >
-        {/* Base gradients */}
+        {/* Radial ambient lighting */}
         <div
           className="absolute inset-0"
           style={{
             background:
-              "radial-gradient(ellipse at 70% 0%, rgba(0,120,200,0.2) 0%, transparent 60%), radial-gradient(ellipse at 20% 100%, rgba(0,60,120,0.28) 0%, transparent 50%)",
+              "radial-gradient(ellipse at 70% 0%, rgba(0, 229, 255, 0.16) 0%, transparent 60%), radial-gradient(ellipse at 20% 100%, rgba(2, 132, 199, 0.25) 0%, transparent 55%)",
           }}
         />
 
         {/* Hover shimmer */}
         <div
-          className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700"
+          className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"
           style={{
             background:
-              "linear-gradient(135deg, rgba(0,180,255,0.07) 0%, transparent 50%, rgba(0,100,220,0.09) 100%)",
+              "linear-gradient(135deg, rgba(0, 229, 255, 0.08) 0%, transparent 50%, rgba(2, 132, 199, 0.1) 100%)",
           }}
         />
 
-        {/* Grid caustics */}
+        {/* Cyber grid overlay */}
         <div
-          className="absolute inset-0 opacity-30"
+          className="absolute inset-0 opacity-25 pointer-events-none"
           style={{
             backgroundImage:
-              "repeating-linear-gradient(0deg, transparent, transparent 80px, rgba(0,150,255,0.04) 80px, rgba(0,150,255,0.04) 81px), repeating-linear-gradient(90deg, transparent, transparent 120px, rgba(0,150,255,0.03) 120px, rgba(0,150,255,0.03) 121px)",
+              "repeating-linear-gradient(0deg, transparent, transparent 70px, rgba(0, 180, 255, 0.05) 70px, rgba(0, 180, 255, 0.05) 71px), repeating-linear-gradient(90deg, transparent, transparent 100px, rgba(0, 180, 255, 0.04) 100px, rgba(0, 180, 255, 0.04) 101px)",
           }}
         />
 
@@ -283,179 +428,556 @@ const Home = () => {
         <SonarRing />
         <DepthMeter />
 
-        {/* Bottom fade */}
+        {/* Bottom backdrop gradient */}
         <div
-          className="absolute inset-0"
+          className="absolute inset-0 pointer-events-none"
           style={{
-            background:
-              "linear-gradient(to top, rgba(2,11,24,0.75) 0%, transparent 55%)",
+            background: "linear-gradient(to top, rgba(2, 8, 19, 0.85) 0%, transparent 60%)",
           }}
         />
 
         <GlitchLayer time={time} />
 
-        <div className="flex h-full flex-col justify-between max-md:px-6 max-md:py-10 lg:p-12 relative z-10">
-          {/* Dynamic Status Badge (Live Now / Next Upcoming) */}
-          {liveCalls && liveCalls.length > 0 ? (
-            <div
-              onClick={() => navigate(`/meeting/${liveCalls[0].id}`)}
-              className="cursor-pointer max-w-[340px] rounded-2xl py-2.5 px-4 text-center backdrop-blur-xl border border-rose-500/60 bg-rose-950/80 shadow-[0_0_25px_rgba(244,63,94,0.4)] hover:scale-105 transition-all flex items-center justify-between gap-3 group/live"
-            >
-              <div className="flex items-center gap-2.5">
+        {/* Hero Content */}
+        <div className="flex h-full flex-col justify-between p-6 sm:p-8 lg:p-10 relative z-10">
+          {/* Top Header Row: Greeting & Live Status Badge */}
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="size-10 rounded-xl bg-cyan-950/80 border border-cyan-500/30 flex items-center justify-center text-cyan-300 shadow-[0_0_15px_rgba(0,229,255,0.25)]">
+                <Sparkles className="size-5 animate-pulse" />
+              </div>
+              <div>
+                <span className="text-[11px] font-mono tracking-widest text-cyan-400 uppercase font-bold">
+                  ◈ COLLABCLASS OS · CYBERSPACE
+                </span>
+                <h2 className="text-sm font-semibold text-slate-200">
+                  {greeting}, <span className="text-white font-bold">{user?.firstName || "Scholar"}</span>
+                </h2>
+              </div>
+            </div>
+
+            {/* Dynamic Live Status / Countdown pill */}
+            {liveCalls && liveCalls.length > 0 ? (
+              <div
+                onClick={() => navigate(`/meeting/${liveCalls[0].id}`)}
+                className="cursor-pointer rounded-2xl py-2 px-4 text-center backdrop-blur-xl border border-rose-500/60 bg-rose-950/80 shadow-[0_0_25px_rgba(244,63,94,0.45)] hover:scale-105 transition-all flex items-center gap-3 group/live"
+              >
                 <span className="relative flex h-2.5 w-2.5">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
                   <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500 shadow-[0_0_8px_#f43f5e]" />
                 </span>
                 <div className="flex flex-col text-left">
                   <span className="text-[10px] font-extrabold text-rose-300 uppercase tracking-widest leading-none">
-                    🔴 Live Class in Session
+                    🔴 Live Class Now
                   </span>
-                  <span className="text-xs font-bold text-white truncate max-w-[150px] mt-0.5">
-                    {liveCalls[0]?.state?.custom?.description || "In Session"}
-                  </span>
-                </div>
-              </div>
-              <span className="text-[11px] font-bold px-3 py-1 rounded-xl bg-rose-500 group-hover/live:bg-rose-400 text-white shadow-md transition-colors flex items-center gap-1">
-                Join Now →
-              </span>
-            </div>
-          ) : upcomingCalls && upcomingCalls.length > 0 ? (
-            <div
-              onClick={() => navigate('/upcoming')}
-              className="cursor-pointer max-w-[320px] rounded-2xl py-2.5 px-4 text-center backdrop-blur-xl border border-cyan-500/30 bg-[#001b36]/75 shadow-[0_0_20px_rgba(0,180,255,0.2)] hover:scale-105 transition-all flex items-center justify-between gap-3"
-            >
-              <div className="flex items-center gap-2.5">
-                <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_8px_rgba(0,229,255,0.8)]" />
-                <div className="flex flex-col text-left">
-                  <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-wider leading-none">
-                    Upcoming Class
-                  </span>
-                  <span className="text-xs font-semibold text-white/90 truncate max-w-[180px] mt-0.5">
-                    {upcomingCalls[0]?.state?.startsAt
-                      ? new Date(upcomingCalls[0].state.startsAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' · ' + (upcomingCalls[0]?.state?.custom?.description || 'Scheduled')
-                      : "Scheduled"}
+                  <span className="text-xs font-bold text-white truncate max-w-[160px] mt-0.5">
+                    {liveCalls[0]?.state?.custom?.heading || liveCalls[0]?.state?.custom?.description || "In Session"}
                   </span>
                 </div>
-              </div>
-            </div>
-          ) : (
-            <div
-              className="max-w-[280px] rounded-xl py-3 px-6 text-center text-sm font-medium backdrop-blur-xl transition-all duration-300 hover:scale-105 hover:border-cyan-400/40 cursor-default"
-              style={{
-                background: "rgba(0,30,60,0.7)",
-                border: "1px solid rgba(0,180,255,0.2)",
-                boxShadow:
-                  "0 0 20px rgba(0,100,200,0.15), inset 0 1px 0 rgba(0,200,255,0.1)",
-              }}
-            >
-              <div className="flex items-center justify-center gap-2">
-                <div
-                  className="w-2 h-2 rounded-full animate-pulse"
-                  style={{
-                    backgroundColor: "#00e5ff",
-                    boxShadow: "0 0 8px rgba(0,229,255,0.8)",
-                  }}
-                />
-                <span style={{ color: "rgba(180,230,255,0.95)" }}>
-                  No Upcoming Meeting
+                <span className="text-[11px] font-bold px-3 py-1 rounded-xl bg-rose-500 group-hover/live:bg-rose-400 text-white shadow-md transition-colors flex items-center gap-1">
+                  Enter →
                 </span>
               </div>
+            ) : upcomingCalls && upcomingCalls.length > 0 ? (
+              <div
+                onClick={() => navigate('/upcoming')}
+                className="cursor-pointer rounded-2xl py-2 px-4 backdrop-blur-xl border border-cyan-500/30 bg-[#001830]/80 shadow-[0_0_20px_rgba(0,229,255,0.2)] hover:scale-105 transition-all flex items-center gap-3"
+              >
+                <div className="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_8px_rgba(0,229,255,0.8)]" />
+                <div className="flex flex-col text-left">
+                  <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-wider leading-none">
+                    Next Lecture · {getRelativeTime(upcomingCalls[0]?.state?.startsAt)}
+                  </span>
+                  <span className="text-xs font-semibold text-slate-100 truncate max-w-[180px] mt-0.5">
+                    {upcomingCalls[0]?.state?.custom?.heading || "Scheduled Session"}
+                  </span>
+                </div>
+                <ArrowRight className="size-4 text-cyan-400" />
+              </div>
+            ) : (
+              <div className="rounded-2xl py-1.5 px-4 backdrop-blur-xl border border-cyan-500/20 bg-cyber-surface/70 flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_8px_rgba(0,229,255,0.8)]" />
+                <span className="text-xs font-medium text-cyan-200/90">
+                  Classroom Node Ready · All Systems Operational
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Bottom Hero Info: Big Clock, Date & Quick Personal Link */}
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mt-auto">
+            <div className="flex flex-col">
+              <h1
+                className="text-5xl font-extrabold sm:text-7xl lg:text-8xl tracking-tight select-none leading-none"
+                style={{
+                  background:
+                    "linear-gradient(135deg, #ffffff 0%, #a5f3fc 35%, #00e5ff 70%, #0284c7 100%)",
+                  backgroundSize: "200% auto",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
+                  filter: "drop-shadow(0 0 35px rgba(0, 229, 255, 0.45))",
+                  animation: "shimmerText 5s linear infinite",
+                }}
+              >
+                {time}
+              </h1>
+              <p className="text-base font-medium sm:text-lg text-cyan-100/80 mt-2 tracking-wide">
+                {date}
+              </p>
             </div>
-          )}
 
-          {/* Time + date */}
-          <div className="flex flex-col gap-2">
-            {/* Coords label */}
-            <div
-              className="text-[10px] font-mono tracking-[0.3em] mb-1"
-              style={{ color: "rgba(0,200,255,0.45)" }}
+            {/* Quick Personal Room Pill */}
+            {user && (
+              <div className="flex items-center gap-2 bg-cyber-elevated/80 border border-cyan-500/25 rounded-2xl p-2.5 backdrop-blur-md shadow-lg max-w-sm">
+                <div className="size-8 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-300">
+                  <KeyRound className="size-4" />
+                </div>
+                <div className="flex flex-col min-w-0 pr-2">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-cyan-400">
+                    Personal Classroom Link
+                  </span>
+                  <span className="text-xs font-mono text-slate-300 truncate">
+                    {user.firstName ? `${user.firstName}'s Room` : "My Room"}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={copyPersonalRoomLink}
+                  className="px-2.5 py-1.5 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-500/40 text-cyan-200 text-xs font-semibold flex items-center gap-1 transition-all active:scale-95"
+                >
+                  {isCopiedPersonal ? <Check className="size-3 text-cyan-300" /> : <Copy className="size-3" />}
+                  {isCopiedPersonal ? "Copied" : "Copy"}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ===================== COMMAND / DIRECT JOIN BAR ===================== */}
+      <div className="relative -mt-4 z-20">
+        <form
+          onSubmit={handleQuickJoin}
+          className="glass-cyber-panel rounded-2xl p-2.5 sm:p-3 flex flex-col sm:flex-row items-center gap-3 border border-cyan-500/30 shadow-neon-cyan/20"
+        >
+          <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-cyber-surface/90 border border-cyan-500/20 w-full sm:w-auto">
+            <Zap className="size-4 text-cyan-400 animate-pulse" />
+            <span className="text-xs font-bold uppercase tracking-wider text-cyan-300 whitespace-nowrap">
+              Quick Join
+            </span>
+          </div>
+
+          <div className="relative flex-1 w-full">
+            <Input
+              type="text"
+              placeholder="Enter 8-digit code (e.g. 7X9K-2M4P) or paste classroom URL..."
+              value={quickCode}
+              onChange={(e) => setQuickCode(e.target.value)}
+              className="w-full bg-cyber-base/80 border-cyan-500/20 text-white placeholder:text-slate-500 rounded-xl pr-24 font-mono text-sm tracking-wide focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400"
+            />
+            <button
+              type="button"
+              onClick={handlePasteClipboard}
+              className="absolute right-2 top-1/2 -translate-y-1/2 px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-[11px] font-medium text-slate-300 border border-white/10 transition-colors"
             >
-              ◈ CoOLLABCLASS SERVICE · LIVE
+              Paste
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <Button
+              type="submit"
+              disabled={isJoining}
+              className="btn-cyber-primary w-full sm:w-auto px-6 py-2.5 rounded-xl flex items-center justify-center gap-2 shadow-lg"
+            >
+              {isJoining ? (
+                <span>Connecting...</span>
+              ) : (
+                <>
+                  <span>Join Classroom</span>
+                  <ArrowRight className="size-4" />
+                </>
+              )}
+            </Button>
+          </div>
+        </form>
+      </div>
+
+      {/* ===================== METRICS HUD DOCK ===================== */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {/* Stat 1 */}
+        <div className="glass-cyber-card rounded-2xl p-4 flex items-center gap-3.5 border border-cyan-500/15">
+          <div className="size-11 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400">
+            <Radio className="size-5 animate-pulse" />
+          </div>
+          <div>
+            <div className="text-2xl font-extrabold text-white">
+              {liveCalls?.length ?? 0}
             </div>
-
-            <h1
-              className="text-5xl font-extrabold lg:text-8xl tracking-tight drop-shadow-2xl transition-transform duration-300 group-hover:scale-[1.02] select-none"
-              style={{
-                background:
-                  "linear-gradient(135deg, #ffffff 0%, #7dd3fc 35%, #0ea5e9 65%, #0369a1 100%)",
-                backgroundSize: "200% auto",
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                backgroundClip: "text",
-                filter: "drop-shadow(0 0 30px rgba(14,165,233,0.5))",
-                animation: "shimmerText 4s linear infinite",
-              }}
-            >
-              {time}
-            </h1>
-
-            <p
-              className="text-lg font-medium lg:text-xl tracking-wide"
-              style={{ color: "rgba(147,210,255,0.85)" }}
-            >
-              {date}
-            </p>
+            <div className="text-xs font-semibold text-slate-400 flex items-center gap-1.5">
+              <span className="size-1.5 rounded-full bg-rose-500 animate-ping inline-block" />
+              Live In Session
+            </div>
           </div>
         </div>
 
-        {/* Decorative glows */}
-        <div
-          className="absolute top-4 right-4 w-20 h-20 rounded-full blur-2xl animate-pulse"
-          style={{ background: "rgba(0,150,255,0.15)" }}
-        />
-        <div
-          className="absolute bottom-8 left-8 w-32 h-32 rounded-full blur-3xl animate-pulse"
-          style={{
-            background: "rgba(0,100,200,0.12)",
-            animationDelay: "1s",
-          }}
-        />
-        <div
-          className="absolute top-1/2 right-1/3 w-16 h-16 rounded-full blur-xl animate-pulse"
-          style={{
-            background: "rgba(0,200,255,0.1)",
-            animationDelay: "2s",
-          }}
-        />
+        {/* Stat 2 */}
+        <div className="glass-cyber-card rounded-2xl p-4 flex items-center gap-3.5 border border-cyan-500/15">
+          <div className="size-11 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+            <Calendar className="size-5" />
+          </div>
+          <div>
+            <div className="text-2xl font-extrabold text-white">
+              {upcomingCalls?.length ?? 0}
+            </div>
+            <div className="text-xs font-semibold text-slate-400">
+              Upcoming Classes
+            </div>
+          </div>
+        </div>
 
-        {/* Edge glows */}
-        <div
-          className="absolute inset-x-0 bottom-0 h-px"
-          style={{
-            background:
-              "linear-gradient(90deg, transparent, rgba(0,180,255,0.5), transparent)",
-          }}
-        />
-        <div
-          className="absolute inset-y-0 right-0 w-px"
-          style={{
-            background:
-              "linear-gradient(180deg, transparent, rgba(0,150,255,0.25), transparent)",
-          }}
-        />
+        {/* Stat 3 */}
+        <div className="glass-cyber-card rounded-2xl p-4 flex items-center gap-3.5 border border-cyan-500/15">
+          <div className="size-11 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400">
+            <Video className="size-5" />
+          </div>
+          <div>
+            <div className="text-2xl font-extrabold text-white">
+              {endedCalls?.length ?? 0}
+            </div>
+            <div className="text-xs font-semibold text-slate-400">
+              Completed Classes
+            </div>
+          </div>
+        </div>
 
-        {/* Corner accent marks */}
-        {[
-          { top: 12, left: 12 },
-          { top: 12, right: 12 },
-          { bottom: 12, left: 12 },
-          { bottom: 12, right: 12 },
-        ].map((pos, i) => (
-          <div
-            key={i}
-            className="absolute w-4 h-4 pointer-events-none"
-            style={{
-              ...pos,
-              borderTop: i < 2 ? "1px solid rgba(0,200,255,0.35)" : undefined,
-              borderBottom: i >= 2 ? "1px solid rgba(0,200,255,0.35)" : undefined,
-              borderLeft: i % 2 === 0 ? "1px solid rgba(0,200,255,0.35)" : undefined,
-              borderRight: i % 2 !== 0 ? "1px solid rgba(0,200,255,0.35)" : undefined,
-            }}
-          />
-        ))}
+        {/* Stat 4 */}
+        <div className="glass-cyber-card rounded-2xl p-4 flex items-center gap-3.5 border border-cyan-500/15">
+          <div className="size-11 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+            <Activity className="size-5" />
+          </div>
+          <div>
+            <div className="text-sm font-bold text-emerald-300">
+              Stream WebRTC
+            </div>
+            <div className="text-xs font-semibold text-slate-400">
+              P2P Low Latency
+            </div>
+          </div>
+        </div>
       </div>
 
-      <MeetingTypeList />
+      {/* ===================== PRIMARY ACTION CARDS ===================== */}
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <div className="size-2 rounded-full bg-cyan-400 shadow-[0_0_8px_#00e5ff]" />
+            <h2 className="text-xl font-bold tracking-tight text-white">
+              Classroom Operations
+            </h2>
+          </div>
+          <span className="text-xs text-slate-400">
+            Quick Actions & Session Controls
+          </span>
+        </div>
+        <MeetingTypeList />
+      </div>
+
+      {/* ===================== LIVE & TODAY'S SCHEDULE DISPATCH ===================== */}
+      <div className="glass-cyber-panel rounded-3xl p-6 sm:p-8 border border-cyan-500/20">
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="size-2 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_8px_#00e5ff]" />
+              <h2 className="text-2xl font-bold tracking-tight text-white">
+                Classroom Dispatch
+              </h2>
+            </div>
+            <p className="text-sm text-slate-400 mt-1">
+              Active live sessions and scheduled upcoming lectures
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate('/upcoming')}
+              className="btn-cyber-ghost text-xs rounded-xl flex items-center gap-1.5"
+            >
+              <span>View Full Calendar</span>
+              <ExternalLink className="size-3.5" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Live / Upcoming Feed */}
+        {liveCalls && liveCalls.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {liveCalls.map((call) => {
+              const meetingTitle = call.state.custom?.heading || call.state.custom?.description || "Live Classroom";
+              const meetingCode = call.state.custom?.meetingCode || "";
+              const meetingUrl = `${window.location.origin}/meeting/${call.id}`;
+
+              return (
+                <div
+                  key={call.id}
+                  className="rounded-2xl p-5 bg-gradient-to-br from-[#02182b] to-[#011425] border border-rose-500/40 shadow-[0_0_30px_rgba(244,63,94,0.15)] flex flex-col justify-between gap-4 hover:-translate-y-1 transition-all group"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="text-[10px] font-extrabold uppercase tracking-widest px-2.5 py-1 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/40 flex items-center gap-1.5">
+                      <span className="size-1.5 rounded-full bg-rose-400 animate-ping" />
+                      Live Now
+                    </span>
+                    {meetingCode && (
+                      <span className="text-xs font-mono font-bold text-cyan-300 px-2.5 py-1 rounded-lg bg-cyber-elevated border border-cyan-500/30">
+                        {meetingCode.length === 8 ? `${meetingCode.slice(0, 4)}-${meetingCode.slice(4)}` : meetingCode}
+                      </span>
+                    )}
+                  </div>
+
+                  <div>
+                    <h3 className="text-lg font-bold text-white group-hover:text-rose-200 transition-colors line-clamp-1">
+                      {meetingTitle}
+                    </h3>
+                    <p className="text-xs text-slate-400 line-clamp-2 mt-1">
+                      {call.state.custom?.subheading || "Active virtual lecture in session. Audio, video, and whiteboard enabled."}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-3 border-t border-white/5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(meetingUrl);
+                        toast({ title: "Class Link Copied!" });
+                      }}
+                      className="text-xs text-slate-400 hover:text-cyan-300 flex items-center gap-1 transition-colors"
+                    >
+                      <Copy className="size-3.5" />
+                      <span>Copy Link</span>
+                    </button>
+
+                    <Button
+                      size="sm"
+                      onClick={() => navigate(`/meeting/${call.id}`)}
+                      className="bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs px-4 py-1.5 rounded-xl shadow-md flex items-center gap-1.5"
+                    >
+                      <span>Join Now</span>
+                      <ArrowRight className="size-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Also show upcoming next to live if room permits */}
+            {upcomingCalls?.slice(0, 2).map((call) => {
+              const meetingTitle = call.state.custom?.heading || call.state.custom?.description || "Scheduled Lecture";
+              const startsAt = call.state.startsAt ? new Date(call.state.startsAt) : null;
+              const meetingCode = call.state.custom?.meetingCode || "";
+
+              return (
+                <div
+                  key={call.id}
+                  className="rounded-2xl p-5 bg-cyber-elevated/70 border border-cyan-500/20 flex flex-col justify-between gap-4 hover:-translate-y-1 transition-all group"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="text-[10px] font-extrabold uppercase tracking-widest px-2.5 py-1 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 flex items-center gap-1.5">
+                      <Clock className="size-3" />
+                      {startsAt ? getRelativeTime(call.state.startsAt) : "Scheduled"}
+                    </span>
+                    {meetingCode && (
+                      <span className="text-xs font-mono font-bold text-cyan-300 px-2 py-0.5 rounded-lg bg-cyber-surface border border-cyan-500/20">
+                        {meetingCode.length === 8 ? `${meetingCode.slice(0, 4)}-${meetingCode.slice(4)}` : meetingCode}
+                      </span>
+                    )}
+                  </div>
+
+                  <div>
+                    <h3 className="text-lg font-bold text-white group-hover:text-cyan-200 transition-colors line-clamp-1">
+                      {meetingTitle}
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-1">
+                      {startsAt
+                        ? startsAt.toLocaleDateString([], { month: "short", day: "numeric" }) + " at " + startsAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+                        : "Date Pending"}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-3 border-t border-white/5">
+                    <span className="text-xs text-slate-500 flex items-center gap-1">
+                      <Users className="size-3.5" />
+                      <span>Virtual Class</span>
+                    </span>
+
+                    <Button
+                      size="sm"
+                      onClick={() => navigate(`/meeting/${call.id}`)}
+                      className="btn-cyber-primary text-xs px-4 py-1.5 rounded-xl shadow-md flex items-center gap-1"
+                    >
+                      <span>Enter</span>
+                      <ArrowRight className="size-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : upcomingCalls && upcomingCalls.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {upcomingCalls.slice(0, 3).map((call) => {
+              const meetingTitle = call.state.custom?.heading || call.state.custom?.description || "Scheduled Lecture";
+              const startsAt = call.state.startsAt ? new Date(call.state.startsAt) : null;
+              const meetingCode = call.state.custom?.meetingCode || "";
+              const meetingUrl = `${window.location.origin}/meeting/${call.id}`;
+
+              return (
+                <div
+                  key={call.id}
+                  className="rounded-2xl p-5 bg-cyber-elevated/70 border border-cyan-500/20 flex flex-col justify-between gap-4 hover:-translate-y-1 transition-all group"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="text-[10px] font-extrabold uppercase tracking-widest px-2.5 py-1 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 flex items-center gap-1.5">
+                      <Clock className="size-3" />
+                      {startsAt ? getRelativeTime(call.state.startsAt) : "Scheduled"}
+                    </span>
+                    {meetingCode && (
+                      <span className="text-xs font-mono font-bold text-cyan-300 px-2 py-0.5 rounded-lg bg-cyber-surface border border-cyan-500/20">
+                        {meetingCode.length === 8 ? `${meetingCode.slice(0, 4)}-${meetingCode.slice(4)}` : meetingCode}
+                      </span>
+                    )}
+                  </div>
+
+                  <div>
+                    <h3 className="text-lg font-bold text-white group-hover:text-cyan-200 transition-colors line-clamp-1">
+                      {meetingTitle}
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-1">
+                      {startsAt
+                        ? startsAt.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" }) + " · " + startsAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+                        : "Time To Be Announced"}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-3 border-t border-white/5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(meetingUrl);
+                        toast({ title: "Class Link Copied!" });
+                      }}
+                      className="text-xs text-slate-400 hover:text-cyan-300 flex items-center gap-1 transition-colors"
+                    >
+                      <Copy className="size-3.5" />
+                      <span>Copy Link</span>
+                    </button>
+
+                    <Button
+                      size="sm"
+                      onClick={() => navigate(`/meeting/${call.id}`)}
+                      className="btn-cyber-primary text-xs px-4 py-1.5 rounded-xl shadow-md flex items-center gap-1"
+                    >
+                      <span>Start Early</span>
+                      <ArrowRight className="size-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          /* Empty state */
+          <div className="text-center py-12 px-6 rounded-2xl bg-cyber-surface/40 border border-cyan-500/10 flex flex-col items-center justify-center">
+            <div className="size-16 rounded-3xl bg-cyan-950/60 border border-cyan-500/30 flex items-center justify-center text-cyan-400 mb-4 shadow-[0_0_25px_rgba(0,229,255,0.2)]">
+              <Calendar className="size-8" />
+            </div>
+            <h3 className="text-lg font-bold text-white mb-1">
+              No Classroom Sessions Right Now
+            </h3>
+            <p className="text-sm text-slate-400 max-w-md mb-5">
+              You are all caught up! Launch an instant lecture for spontaneous office hours or schedule an upcoming module with your students.
+            </p>
+            <div className="flex items-center gap-3">
+              <Button
+                onClick={() => navigate("/upcoming")}
+                className="btn-cyber-ghost text-xs px-5 py-2 rounded-xl"
+              >
+                View Full Calendar
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ===================== CLASSROOM HUB & TOOLS ===================== */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Tool 1: Interactive Whiteboard */}
+        <div
+          onClick={() => {
+            if (user?.id) {
+              navigate(`/meeting/${user.id}?personal=true`);
+            } else {
+              navigate("/home");
+            }
+          }}
+          className="glass-cyber-card rounded-2xl p-6 border border-cyan-500/20 cursor-pointer group hover:-translate-y-1 transition-all"
+        >
+          <div className="size-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-300 mb-4 group-hover:scale-110 transition-transform">
+            <PenTool className="size-6" />
+          </div>
+          <h3 className="text-lg font-bold text-white group-hover:text-cyan-200 transition-colors">
+            Collaborative Whiteboard
+          </h3>
+          <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
+            Real-time drawing canvas, sticky notes, architectural diagrams, and math formula rendering for interactive classes.
+          </p>
+          <div className="mt-4 flex items-center text-xs font-semibold text-cyan-400 gap-1 group-hover:translate-x-1 transition-transform">
+            <span>Launch Canvas</span>
+            <ArrowRight className="size-3.5" />
+          </div>
+        </div>
+
+        {/* Tool 2: AI Study Copilot */}
+        <div
+          className="glass-cyber-card rounded-2xl p-6 border border-blue-500/20 group hover:-translate-y-1 transition-all"
+        >
+          <div className="size-12 rounded-2xl bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-300 mb-4 group-hover:scale-110 transition-transform">
+            <Bot className="size-6" />
+          </div>
+          <h3 className="text-lg font-bold text-white group-hover:text-blue-200 transition-colors">
+            AI Study Copilot
+          </h3>
+          <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
+            Generate lecture summaries, 3-question quizzes, code explanations, and flashcards directly during or after live class.
+          </p>
+          <div className="mt-4 flex items-center text-xs font-semibold text-sky-400 gap-1">
+            <span>Available Inside Any Call</span>
+            <Sparkles className="size-3.5" />
+          </div>
+        </div>
+
+        {/* Tool 3: Host Privileges & Attendance */}
+        <div
+          onClick={() => navigate('/recordings')}
+          className="glass-cyber-card rounded-2xl p-6 border border-purple-500/20 cursor-pointer group hover:-translate-y-1 transition-all"
+        >
+          <div className="size-12 rounded-2xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-300 mb-4 group-hover:scale-110 transition-transform">
+            <ShieldCheck className="size-6" />
+          </div>
+          <h3 className="text-lg font-bold text-white group-hover:text-purple-200 transition-colors">
+            Attendance & Cloud Vault
+          </h3>
+          <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
+            Automated student join/leave logs, downloadable CSV reports, and high-definition recordings of every lecture.
+          </p>
+          <div className="mt-4 flex items-center text-xs font-semibold text-purple-400 gap-1 group-hover:translate-x-1 transition-transform">
+            <span>Explore Archives</span>
+            <ArrowRight className="size-3.5" />
+          </div>
+        </div>
+      </div>
     </section>
   );
 };

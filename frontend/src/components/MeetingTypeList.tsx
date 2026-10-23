@@ -23,13 +23,18 @@ const initialValues = {
   meetingCode: "",
 };
 
-// Shared ocean-blue input/textarea classes
+// Ocean Cyberpunk input/textarea classes
 const oceanInput =
-  "border border-[rgba(0,180,255,0.15)] bg-[rgba(0,20,50,0.6)] text-[rgba(200,235,255,0.95)] placeholder:text-[rgba(100,180,220,0.4)] focus-visible:ring-2 focus-visible:ring-[rgba(0,180,255,0.35)] focus-visible:ring-offset-0 transition-all duration-200 rounded-xl backdrop-blur-sm";
+  "border border-[rgba(0,180,255,0.2)] bg-[rgba(2,8,19,0.7)] text-[rgba(240,249,255,0.95)] placeholder:text-[rgba(100,180,220,0.4)] focus-visible:ring-2 focus-visible:ring-[rgba(0,229,255,0.4)] focus-visible:ring-offset-0 transition-all duration-200 rounded-xl backdrop-blur-md";
 
-const oceanLabel = "text-base font-medium leading-[22.4px] text-[rgba(120,200,255,0.85)]";
+const oceanLabel = "text-sm font-semibold tracking-wide text-cyan-200";
 
-const MeetingTypeList = () => {
+interface MeetingTypeListProps {
+  onJoinClick?: () => void;
+  onScheduleClick?: () => void;
+}
+
+const MeetingTypeList = ({}: MeetingTypeListProps = {}) => {
   const navigate = useNavigate();
   const [meetingState, setMeetingState] = useState<
     "isScheduleMeeting" | "isJoiningMeeting" | "isInstantMeeting" | undefined
@@ -58,7 +63,7 @@ const MeetingTypeList = () => {
       const urlMatch = trimmed.match(/\/meeting\/([a-zA-Z0-9_\-]+)/);
       if (urlMatch && urlMatch[1]) {
         navigate(`/meeting/${urlMatch[1]}`);
-        toast({ title: "Joining meeting..." });
+        toast({ title: "Joining classroom..." });
         return;
       }
 
@@ -66,7 +71,7 @@ const MeetingTypeList = () => {
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
       if (uuidRegex.test(trimmed)) {
         navigate(`/meeting/${trimmed}`);
-        toast({ title: "Joining meeting..." });
+        toast({ title: "Joining classroom..." });
         return;
       }
 
@@ -99,14 +104,14 @@ const MeetingTypeList = () => {
       if (call.state.endedAt) {
         toast({
           title: "Meeting has ended",
-          description: "This meeting has already ended",
+          description: "This meeting has already concluded",
           variant: "destructive",
         });
         return;
       }
 
       navigate(`/meeting/${call.id}`);
-      toast({ title: "Joining meeting..." });
+      toast({ title: "Connecting to classroom..." });
     } catch (error) {
       console.error("Error joining meeting by code/link:", error);
       toast({
@@ -142,12 +147,12 @@ const MeetingTypeList = () => {
       });
       if (isInstantMeeting) {
         navigate(`/meeting/${call.id}`);
-        toast({ title: "Meeting Created" });
+        toast({ title: "Instant Classroom Started" });
         return;
       }
       if (isScheduledMeeting) {
         setCallDetail(call);
-        toast({ title: "Meeting Created" });
+        toast({ title: "Classroom Scheduled Successfully" });
       }
     } catch (error) {
       console.error("Error creating meeting:", error);
@@ -170,29 +175,37 @@ const MeetingTypeList = () => {
       <HomeCard
         img="/icons/add-meeting.svg"
         title="New Meeting"
-        description="Start an instant meeting"
-        className="from-[#001830] to-[#003060]"
+        description="Launch an instant live classroom with HD video, screen sharing & AI"
+        badge="Instant Live"
+        accent="cyan"
+        className="bg-gradient-to-br from-[#02182b] via-[#042442] to-[#011425]"
         handleClick={() => setMeetingState("isInstantMeeting")}
       />
       <HomeCard
         img="/icons/join-meeting.svg"
         title="Join Meeting"
-        description="by code or link"
-        className="from-[#001020] to-[#002550]"
+        description="Connect to an existing classroom via 8-digit code or meeting URL"
+        badge="Quick Code"
+        accent="blue"
+        className="bg-gradient-to-br from-[#03152e] via-[#062047] to-[#021024]"
         handleClick={() => setMeetingState("isJoiningMeeting")}
       />
       <HomeCard
         img="/icons/schedule.svg"
-        title="Schedule Meeting"
-        description="Plan your meeting"
-        className="from-[#001830] to-[#003060]"
+        title="Schedule Lecture"
+        description="Plan lectures, configure agendas, and sync class calendars"
+        badge="Calendar"
+        accent="amber"
+        className="bg-gradient-to-br from-[#1c1503] via-[#2d2106] to-[#120d01]"
         handleClick={() => setMeetingState("isScheduleMeeting")}
       />
       <HomeCard
         img="/icons/recordings.svg"
-        title="View Recordings"
-        description="Meeting Recordings"
-        className="from-[#001830] to-[#003060]"
+        title="Class Archives"
+        description="Access past recordings, attendance analytics, and lecture notes"
+        badge="Vault"
+        accent="purple"
+        className="bg-gradient-to-br from-[#160829] via-[#240e3f] to-[#0e041a]"
         handleClick={() => navigate("/recordings")}
       />
 
@@ -200,37 +213,37 @@ const MeetingTypeList = () => {
         <MeetingModal
           isOpen={meetingState === "isScheduleMeeting"}
           onClose={resetForm}
-          title="Create Meeting"
+          title="Schedule Classroom Session"
           handleClick={createMeeting}
         >
           <div className="flex flex-col gap-3">
-            <label className={oceanLabel}>Meeting Heading</label>
+            <label className={oceanLabel}>Lecture Heading</label>
             <Input
               className={oceanInput}
-              placeholder="Enter meeting heading (e.g., Team Standup)"
+              placeholder="e.g. CS101: Distributed Systems & Consensus"
               value={values.heading}
               onChange={(e) => setValues({ ...values, heading: e.target.value })}
             />
           </div>
           <div className="flex flex-col gap-3">
-            <label className={oceanLabel}>Meeting Subheading</label>
+            <label className={oceanLabel}>Subheading / Module</label>
             <Input
               className={oceanInput}
-              placeholder="Enter meeting subheading (optional)"
+              placeholder="e.g. Week 4: Raft Consensus Algorithm"
               value={values.subheading}
               onChange={(e) => setValues({ ...values, subheading: e.target.value })}
             />
           </div>
           <div className="flex flex-col gap-3">
-            <label className={oceanLabel}>Add a description</label>
+            <label className={oceanLabel}>Lesson Agenda / Description</label>
             <Textarea
               className={oceanInput}
-              placeholder="Enter meeting description (optional)"
+              placeholder="Outline topics covered, prerequisites, or required readings..."
               onChange={(e) => setValues({ ...values, description: e.target.value })}
             />
           </div>
           <div className="flex w-full flex-col gap-3">
-            <label className={oceanLabel}>Select Date and Time</label>
+            <label className={oceanLabel}>Schedule Date & Time</label>
             <ReactDatePicker
               selected={values.dateTime}
               onChange={(date) => setValues({ ...values, dateTime: date! })}
@@ -239,7 +252,7 @@ const MeetingTypeList = () => {
               timeIntervals={15}
               timeCaption="time"
               dateFormat="MMMM d, yyyy h:mm aa"
-              className="w-full rounded-xl border border-[rgba(0,180,255,0.15)] bg-[rgba(0,20,50,0.6)] text-[rgba(200,235,255,0.95)] placeholder:text-[rgba(100,180,220,0.4)] p-3 focus:outline-none focus:ring-2 focus:ring-[rgba(0,180,255,0.35)] transition-all duration-200 backdrop-blur-sm"
+              className="w-full rounded-xl border border-[rgba(0,180,255,0.2)] bg-[rgba(2,8,19,0.7)] text-[rgba(240,249,255,0.95)] placeholder:text-[rgba(100,180,220,0.4)] p-3 focus:outline-none focus:ring-2 focus:ring-[rgba(0,229,255,0.4)] transition-all duration-200 backdrop-blur-md"
             />
           </div>
         </MeetingModal>
@@ -247,35 +260,28 @@ const MeetingTypeList = () => {
         <MeetingModal
           isOpen={meetingState === "isScheduleMeeting"}
           onClose={() => { setMeetingState(undefined); setCallDetail(undefined); }}
-          title="Meeting Created"
-          handleClick={() => { navigator.clipboard.writeText(meetingLink); toast({ title: "Link Copied" }); }}
+          title="Classroom Scheduled"
+          handleClick={() => { navigator.clipboard.writeText(meetingLink); toast({ title: "Class Link Copied!" }); }}
           image={"/icons/checked.svg"}
           buttonIcon="/icons/copy.svg"
           className="text-center"
-          buttonText="Copy Meeting Link"
+          buttonText="Copy Classroom Link"
         >
           <div className="flex flex-col gap-4">
             {meetingCode && (
               <div className="flex flex-col gap-3">
-                <label className="text-sm font-medium text-[rgba(120,200,255,0.85)]">Meeting Code</label>
+                <label className="text-sm font-semibold text-cyan-200">Classroom Code</label>
                 <div className="flex items-center gap-3">
                   <div
                     className="flex-1 px-4 py-4 rounded-xl"
                     style={{
-                      background: "rgba(0,20,50,0.7)",
-                      border: "1px solid rgba(0,180,255,0.2)",
-                      boxShadow: "0 0 20px rgba(0,100,200,0.12), inset 0 1px 0 rgba(0,200,255,0.08)",
+                      background: "rgba(2,8,19,0.85)",
+                      border: "1px solid rgba(0,229,255,0.3)",
+                      boxShadow: "0 0 25px rgba(0,229,255,0.15), inset 0 1px 0 rgba(0,229,255,0.1)",
                     }}
                   >
                     <p
-                      className="text-2xl font-bold tracking-widest text-center uppercase"
-                      style={{
-                        background: "linear-gradient(135deg, #ffffff, #7dd3fc, #0ea5e9)",
-                        WebkitBackgroundClip: "text",
-                        WebkitTextFillColor: "transparent",
-                        backgroundClip: "text",
-                        filter: "drop-shadow(0 0 12px rgba(14,165,233,0.5))",
-                      }}
+                      className="text-2xl font-mono font-extrabold tracking-widest text-center uppercase text-cyan-300 drop-shadow-[0_0_12px_rgba(0,229,255,0.6)]"
                     >
                       {meetingCode.length === 8
                         ? `${meetingCode.slice(0, 4)}-${meetingCode.slice(4)}`
@@ -288,13 +294,9 @@ const MeetingTypeList = () => {
                     onClick={(e) => {
                       e.stopPropagation();
                       navigator.clipboard.writeText(meetingCode);
-                      toast({ title: "Meeting Code Copied" });
+                      toast({ title: "Classroom Code Copied" });
                     }}
-                    style={{
-                      background: "rgba(0,20,50,0.7)",
-                      border: "1px solid rgba(0,180,255,0.2)",
-                    }}
-                    className="hover:border-[rgba(0,200,255,0.4)] transition-all duration-200"
+                    className="border-cyan-500/30 bg-cyber-elevated hover:bg-cyber-muted hover:border-cyan-400 text-cyan-300 transition-all duration-200"
                   >
                     <img src="/icons/copy.svg" alt="copy" width={16} height={16} />
                   </Button>
@@ -302,15 +304,11 @@ const MeetingTypeList = () => {
               </div>
             )}
             <div className="flex flex-col gap-3">
-              <label className="text-sm font-medium text-[rgba(120,200,255,0.85)]">Meeting Link</label>
+              <label className="text-sm font-semibold text-cyan-200">Direct Meeting URL</label>
               <div
-                className="flex-1 px-4 py-3 rounded-xl"
-                style={{
-                  background: "rgba(0,20,50,0.7)",
-                  border: "1px solid rgba(0,180,255,0.15)",
-                }}
+                className="flex-1 px-4 py-3 rounded-xl bg-cyber-surface border border-cyan-500/20"
               >
-                <p className="text-sm truncate" style={{ color: "rgba(147,210,255,0.9)" }}>
+                <p className="text-xs font-mono truncate text-cyan-100/80">
                   {meetingLink}
                 </p>
               </div>
@@ -322,9 +320,9 @@ const MeetingTypeList = () => {
       <MeetingModal
         isOpen={meetingState === "isJoiningMeeting"}
         onClose={() => { setMeetingState(undefined); setValues({ ...initialValues }); }}
-        title="Join Meeting"
+        title="Join Classroom"
         className="text-center"
-        buttonText="Join Meeting"
+        buttonText="Connect to Classroom"
         handleClick={async () => {
           const code = values.meetingCode.trim();
           const link = values.link.trim();
@@ -339,7 +337,7 @@ const MeetingTypeList = () => {
       >
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-3">
-            <label className={oceanLabel}>Enter Meeting Code (8 characters)</label>
+            <label className={oceanLabel}>Enter 8-Digit Classroom Code</label>
             <Input
               placeholder="ABCD-1234"
               value={values.meetingCode}
@@ -349,19 +347,18 @@ const MeetingTypeList = () => {
                 setValues({ ...values, meetingCode: formatted });
               }}
               maxLength={9}
-              className={`${oceanInput} text-center text-2xl font-bold tracking-widest uppercase`}
-              style={{ letterSpacing: "0.2em" }}
+              className={`${oceanInput} text-center text-2xl font-mono font-bold tracking-widest uppercase text-cyan-300`}
             />
           </div>
           <div className="relative flex items-center gap-3">
-            <div className="flex-1 border-t border-[rgba(0,150,255,0.15)]"></div>
-            <span className="text-sm font-medium" style={{ color: "rgba(100,170,220,0.6)" }}>OR</span>
-            <div className="flex-1 border-t border-[rgba(0,150,255,0.15)]"></div>
+            <div className="flex-1 border-t border-[rgba(0,180,255,0.15)]"></div>
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">OR PASTE LINK</span>
+            <div className="flex-1 border-t border-[rgba(0,180,255,0.15)]"></div>
           </div>
           <div className="flex flex-col gap-3">
-            <label className={oceanLabel}>Enter Meeting Link or Call ID</label>
+            <label className={oceanLabel}>Classroom Link or UUID</label>
             <Input
-              placeholder="https://.../meeting/uuid or UUID"
+              placeholder="https://collabclass.app/meeting/uuid or UUID"
               value={values.link}
               onChange={(e) => setValues({ ...values, link: e.target.value })}
               className={oceanInput}
@@ -373,35 +370,35 @@ const MeetingTypeList = () => {
       <MeetingModal
         isOpen={meetingState === "isInstantMeeting"}
         onClose={resetForm}
-        title="Start an Instant Meeting"
+        title="Launch Instant Classroom"
         className="text-center"
-        buttonText="Start Meeting"
+        buttonText="Start Session Now"
         handleClick={createMeeting}
       >
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-3">
-            <label className={oceanLabel}>Meeting Heading</label>
+            <label className={oceanLabel}>Classroom Heading</label>
             <Input
               className={oceanInput}
-              placeholder="Enter meeting heading (e.g., Quick Team Sync)"
+              placeholder="e.g. Quick Office Hours / Discussion"
               value={values.heading}
               onChange={(e) => setValues({ ...values, heading: e.target.value })}
             />
           </div>
           <div className="flex flex-col gap-3">
-            <label className={oceanLabel}>Meeting Subheading</label>
+            <label className={oceanLabel}>Subject / Topic (Optional)</label>
             <Input
               className={oceanInput}
-              placeholder="Enter meeting subheading (optional)"
+              placeholder="e.g. React 18 Concurrency & Hooks review"
               value={values.subheading}
               onChange={(e) => setValues({ ...values, subheading: e.target.value })}
             />
           </div>
           <div className="flex flex-col gap-3">
-            <label className={oceanLabel}>Add a description</label>
+            <label className={oceanLabel}>Session Notes</label>
             <Textarea
               className={oceanInput}
-              placeholder="Enter meeting description (optional)"
+              placeholder="Add key goals or announcements for participants..."
               onChange={(e) => setValues({ ...values, description: e.target.value })}
             />
           </div>

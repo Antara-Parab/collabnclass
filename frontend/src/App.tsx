@@ -45,7 +45,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
                 "flex flex-1 flex-col transition-colors duration-300",
                 isMeetingPage
                   ? "p-0"
-                  : "px-6 pb-6 pt-28 bg-gradient-to-br from-black via-gray-900 to-black"
+                  : "px-4 sm:px-6 pb-12 pt-28 bg-[#020813] text-white selection:bg-cyan-500/30 selection:text-cyan-200"
               )}
             >
               {children}
