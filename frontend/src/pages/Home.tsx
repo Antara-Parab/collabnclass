@@ -532,12 +532,17 @@ const Home = () => {
               placeholder="Enter 8-character code (e.g. 7X9K-2M4P) or URL..."
               value={quickCode}
               onChange={(e) => setQuickCode(e.target.value)}
-              className="w-full bg-cyber-base/80 border-cyan-500/20 text-white placeholder:text-slate-500 rounded-xl pr-20 font-mono text-xs sm:text-sm tracking-wide focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 h-10 sm:h-11"
+              style={{
+                backgroundColor: "#020813",
+                borderColor: "rgba(0, 180, 255, 0.25)",
+                color: "#f0f9ff",
+              }}
+              className="w-full !bg-[#020813] border-cyan-500/25 text-slate-100 placeholder:text-slate-500 rounded-xl pr-20 font-mono text-xs sm:text-sm tracking-wide focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/40 h-10 sm:h-11 backdrop-blur-md"
             />
             <button
               type="button"
               onClick={handlePasteClipboard}
-              className="absolute right-1.5 top-1/2 -translate-y-1/2 px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-[11px] font-medium text-slate-300 border border-white/10 transition-colors flex items-center gap-1"
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 px-2.5 py-1 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-[11px] font-medium text-cyan-300 border border-cyan-500/30 transition-colors flex items-center gap-1"
             >
               <ClipboardPaste className="size-3" />
               <span>Paste</span>
