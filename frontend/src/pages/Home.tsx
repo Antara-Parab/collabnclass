@@ -117,7 +117,7 @@ const Scanlines = () => (
 
 // Depth sonar ring
 const SonarRing = () => (
-  <div className="absolute top-6 right-6 pointer-events-none hidden md:block">
+  <div className="absolute right-8 lg:right-14 top-1/2 -translate-y-1/2 pointer-events-none hidden lg:block opacity-35">
     <div
       className="w-16 h-16 rounded-full border flex items-center justify-center relative"
       style={{
