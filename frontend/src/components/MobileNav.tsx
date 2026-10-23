@@ -1,8 +1,8 @@
 import { Link, useLocation } from 'react-router-dom';
-
 import { Sheet, SheetClose, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { sidebarLinks } from '@/constants';
 import { cn } from '@/lib/utils';
+import { Speech, Menu } from 'lucide-react';
 
 const MobileNav = () => {
   const location = useLocation();
@@ -11,50 +11,64 @@ const MobileNav = () => {
     <section className="w-full max-w-[264px]">
       <Sheet>
         <SheetTrigger asChild>
-          <img
-            src="/icons/hamburger.svg"
-            width={36}
-            height={36}
-            alt="hamburger icon"
-            className="cursor-pointer sm:hidden"
-          />
+          <button
+            type="button"
+            aria-label="Open mobile navigation"
+            className="sm:hidden p-2 rounded-xl bg-cyber-elevated border border-cyan-500/25 text-cyan-300 hover:border-cyan-400 transition-colors"
+          >
+            <Menu className="size-6" />
+          </button>
         </SheetTrigger>
-        <SheetContent side="left" className="border-r border-light-4 dark:border-dark-4 bg-light-1 dark:bg-dark-1 transition-colors">
-          <Link to="/" className="flex items-center gap-1">
-            <img
-              src="/icons/logo.png"
-              width={32}
-              height={32}
-              alt="collabclass logo"
-            />
-            <p className="text-[26px] font-extrabold text-dark-2 dark:text-white transition-colors">CollabClass</p>
+        <SheetContent
+          side="left"
+          className="border-r border-cyan-500/20 bg-[#040e1c] text-white backdrop-blur-2xl p-6 transition-colors"
+        >
+          {/* Brand header */}
+          <Link to="/" className="flex items-center gap-2.5 mb-8">
+            <div className="size-10 rounded-xl bg-cyan-950/80 border border-cyan-500/30 flex items-center justify-center text-cyan-300 shadow-[0_0_15px_rgba(0,229,255,0.25)]">
+              <Speech className="size-5" />
+            </div>
+            <div>
+              <p className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-white via-cyan-100 to-cyan-400 bg-clip-text text-transparent">
+                CollabClass
+              </p>
+              <p className="text-[10px] font-mono tracking-widest text-cyan-400 uppercase">
+                Virtual Classroom
+              </p>
+            </div>
           </Link>
-          <div className="flex h-[calc(100vh-72px)] flex-col justify-between overflow-y-auto">
+
+          {/* Navigation Links */}
+          <div className="flex h-[calc(100vh-120px)] flex-col justify-between overflow-y-auto">
             <SheetClose asChild>
-              <section className=" flex h-full flex-col gap-6 pt-16 text-dark-2 dark:text-white transition-colors">
+              <section className="flex h-full flex-col gap-2.5 text-white">
                 {sidebarLinks.map((item) => {
-                  const isActive = location.pathname === item.route;
+                  const isActive =
+                    location.pathname === item.route ||
+                    location.pathname.startsWith(`${item.route}/`);
 
                   return (
                     <SheetClose asChild key={item.route}>
                       <Link
                         to={item.route}
-                        key={item.label}
                         className={cn(
-                          'flex gap-4 items-center p-4 rounded-lg w-full max-w-60 transition-all hover:bg-light-3 dark:hover:bg-dark-3',
-                          {
-                            'bg-royal-1 text-white hover:bg-royal-2': isActive,
-                          }
+                          'flex items-center gap-3.5 px-4 py-3 rounded-xl w-full transition-all duration-200 text-sm font-semibold',
+                          isActive
+                            ? 'bg-cyan-500/15 border border-cyan-500/40 text-cyan-300 shadow-[0_0_15px_rgba(0,229,255,0.15)]'
+                            : 'text-slate-400 hover:text-white hover:bg-white/5 border border-transparent'
                         )}
                       >
                         <img
                           src={item.imgURL}
                           alt={item.label}
-                          width={20}
-                          height={20}
-                          className={isActive ? 'brightness-0 invert' : 'opacity-70 dark:opacity-80'}
+                          width={18}
+                          height={18}
+                          className={cn(
+                            'transition-opacity',
+                            isActive ? 'brightness-0 invert' : 'opacity-70'
+                          )}
                         />
-                        <p className="font-semibold">{item.label}</p>
+                        <span>{item.label}</span>
                       </Link>
                     </SheetClose>
                   );
@@ -69,4 +83,3 @@ const MobileNav = () => {
 };
 
 export default MobileNav;
-

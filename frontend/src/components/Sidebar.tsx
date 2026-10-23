@@ -17,7 +17,7 @@ const handleLogout = async () => {
     <>
       <button
         onClick={() => setIsCollapsed(!isCollapsed)}
-        className="fixed left-4 top-24 z-50 lg:hidden p-3 rounded-full text-[rgba(180,225,255,0.9)] transition-all duration-200"
+        className="fixed left-4 top-24 z-50 max-sm:hidden lg:hidden p-3 rounded-full text-[rgba(180,225,255,0.9)] transition-all duration-200"
         style={{
           background: 'rgba(0,20,50,0.85)',
           border: '1px solid rgba(0,180,255,0.2)',
