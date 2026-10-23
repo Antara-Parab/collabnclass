@@ -64,9 +64,9 @@ const HomeCard = ({
   return (
     <section
       className={cn(
-        'px-6 py-7 flex flex-col justify-between w-full min-h-[260px] rounded-[24px] cursor-pointer group relative overflow-hidden transition-all duration-300',
-        'border border-[rgba(0,180,255,0.14)] backdrop-blur-xl',
-        'hover:-translate-y-1.5',
+        'p-5 sm:p-6 flex flex-col justify-between w-full min-h-[190px] sm:min-h-[220px] rounded-2xl sm:rounded-[22px] cursor-pointer group relative overflow-hidden transition-all duration-300',
+        'border border-[rgba(0,180,255,0.15)] backdrop-blur-xl',
+        'hover:-translate-y-1 active:scale-[0.99]',
         config.border,
         config.glow,
         className
@@ -87,27 +87,27 @@ const HomeCard = ({
       {/* Ambient background glow orb */}
       <div
         className={cn(
-          'absolute -top-12 -right-12 w-32 h-32 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none',
+          'absolute -top-10 -right-10 w-28 h-28 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none',
           config.orbBg
         )}
       />
 
       {/* Top row: Icon + Badge + Arrow */}
-      <div className="flex items-start justify-between relative z-10">
+      <div className="flex items-start justify-between relative z-10 gap-2">
         <div
           className={cn(
-            'size-14 rounded-2xl flex items-center justify-center border transition-all duration-300 group-hover:scale-110 shadow-lg',
+            'size-12 sm:size-13 rounded-xl sm:rounded-2xl flex items-center justify-center border transition-all duration-300 group-hover:scale-110 shadow-lg',
             config.iconBg
           )}
         >
-          <img src={img} alt="card-icon" width={26} height={26} className="brightness-0 invert opacity-95" />
+          <img src={img} alt="card-icon" width={22} height={22} className="brightness-0 invert opacity-95" />
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2">
           {badge && (
             <span
               className={cn(
-                'text-[10px] font-extrabold uppercase tracking-widest px-2.5 py-1 rounded-full border shadow-sm backdrop-blur-md',
+                'text-[9px] sm:text-[10px] font-extrabold uppercase tracking-widest px-2.5 py-0.5 sm:py-1 rounded-full border shadow-sm backdrop-blur-md',
                 config.badgeBg
               )}
             >
@@ -116,26 +116,23 @@ const HomeCard = ({
           )}
           <div
             className={cn(
-              'size-8 rounded-full border border-white/10 bg-white/5 flex items-center justify-center opacity-70 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200',
+              'size-7 sm:size-8 rounded-full border border-white/10 bg-white/5 flex items-center justify-center opacity-70 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200',
               config.arrowColor
             )}
           >
-            <ArrowUpRight className="size-4" />
+            <ArrowUpRight className="size-3.5 sm:size-4" />
           </div>
         </div>
       </div>
 
       {/* Content */}
-      <div className="flex flex-col gap-2 relative z-10 mt-6">
+      <div className="flex flex-col gap-1.5 relative z-10 mt-4">
         <h2
-          className="text-2xl font-bold tracking-tight text-white group-hover:text-cyan-200 transition-colors duration-200"
-          style={{
-            letterSpacing: '-0.02em',
-          }}
+          className="text-lg sm:text-xl font-bold tracking-tight text-white group-hover:text-cyan-200 transition-colors duration-200"
         >
           {title}
         </h2>
-        <p className="text-sm font-medium text-slate-400 group-hover:text-slate-200 transition-colors duration-200 line-clamp-2">
+        <p className="text-xs sm:text-sm font-medium text-slate-400 group-hover:text-slate-200 transition-colors duration-200 line-clamp-2">
           {description}
         </p>
       </div>
